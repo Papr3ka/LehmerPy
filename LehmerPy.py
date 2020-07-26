@@ -32,6 +32,35 @@ def convertTuple(tup):
     str =  ''.join(tup) 
     return str
 
+if os.name == 'nt':
+    import msvcrt
+    import ctypes
+
+    class _CursorInfo(ctypes.Structure):
+        _fields_ = [("size", ctypes.c_int),
+                    ("visible", ctypes.c_byte)]
+
+def hide_cursor():
+    if os.name == 'nt':
+        ci = _CursorInfo()
+        handle = ctypes.windll.kernel32.GetStdHandle(-11)
+        ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+        ci.visible = False
+        ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+    elif os.name == 'posix':
+        sys.stdout.write("\033[?25l")
+        sys.stdout.flush()
+
+def show_cursor():
+    if os.name == 'nt':
+        ci = _CursorInfo()
+        handle = ctypes.windll.kernel32.GetStdHandle(-11)
+        ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+        ci.visible = True
+        ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+    elif os.name == 'posix':
+        sys.stdout.write("\033[?25h")
+        sys.stdout.flush()
 
 class colors:
     PURPLE = '\033[95m'
@@ -87,7 +116,16 @@ def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_prim
         p += core_count
     finished.put(1)
 
-
+def loading_animation(wait_between, finished):
+    while True:
+        print("|", end="\r")
+        time.sleep(wait_between)
+        print("/", end="\r")
+        time.sleep(wait_between)
+        print("-", end="\r")
+        time.sleep(wait_between)
+        print("\ ", end="\r")
+        time.sleep(wait_between)
 
 
 if __name__ == "__main__":
@@ -120,21 +158,26 @@ if __name__ == "__main__":
             max_p_value = int(input("MAX:"))
         except:
             pass
+        hide_cursor()
         print("\n")
         fallback_core_count = 2
         if core_count == 0:
             print(str(time.ctime()),"  "+colors.RED+"ERROR: Unable to retreive core count"+colors.END)
             print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
             core_count = fallback_core_count
+
+        loadani = Process(target=loading_animation, args=(0.1, finished))        
         for num in range(core_count):
             print(str(time.ctime()),"  Starting Workers")
             multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished))
             multi.start()
+        loadani.start()
         while finished.qsize() != core_count:
             time.sleep(0.1)
         for num in range(core_count):
             print(str(time.ctime()) +"  Stopping Workers")
             multi.join()
+            loadani.join()
         Mersenne_primes.sort()
         while not Mersenne_primes_queue.empty():
             Mersenne_primes.append(Mersenne_primes_queue.get())
@@ -142,6 +185,7 @@ if __name__ == "__main__":
         print("\n")
         for x in Mersenne_primes:
             print("2^"+str(x)+"-1 =", 2**x - 1)
+        show_cursor()
         wait(0)
     if str(mode) == "2" or mode == "confirm" or mode == "Confirm" or mode == "C" or mode == "c":
         print("\nConfirmation")
@@ -153,6 +197,7 @@ if __name__ == "__main__":
             passes = int(input("Passes:"))
         except:
             pass
+        hide_cursor()
         fallback_core_count = 2
         if core_count == 0:
             print(str(time.ctime()),"  "+colors.RED+"ERROR: Unable to retreive core count"+colors.END)
@@ -185,4 +230,5 @@ if __name__ == "__main__":
                 print("2^"+str(p)+"-1 =", 2**p - 1, "\nIs not a Mersenne Prime")
         else:
             print(len(Mersenne_confirm_error) - max(set(Mersenne_confirm_error), key=Mersenne_confirm_error.count), " Errors Detected")
+        show_cursor()
         wait(0)
