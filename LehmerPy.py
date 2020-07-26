@@ -126,6 +126,7 @@ def loading_animation(wait_between, finished):
         time.sleep(wait_between)
         print("\ ", end="\r")
         time.sleep(wait_between)
+        hide_cursor()
 
 
 if __name__ == "__main__":
@@ -168,7 +169,7 @@ if __name__ == "__main__":
 
         loadani = Process(target=loading_animation, args=(0.1, finished))        
         for num in range(core_count):
-            print(str(time.ctime()),"  Starting Workers")
+            print(str(time.ctime()) + "  Starting Workers")
             multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished))
             multi.start()
         loadani.start()
