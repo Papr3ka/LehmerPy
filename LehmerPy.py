@@ -117,7 +117,7 @@ def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_prim
     finished.put(1)
 
 def loading_animation(wait_between, finished):
-    while True:
+    while finished.qsize() == 0:
         print("|", end="\r")
         time.sleep(wait_between)
         print("/", end="\r")
@@ -207,6 +207,7 @@ if __name__ == "__main__":
             core_count = int(passes)
             if core_count <= 0:
                 core_count = 1
+        loadani = Process(target=loading_animation, args=(0.1, finished)) 
         for num in range(core_count):
             if passes == 1:
                 plural = " "
@@ -215,11 +216,13 @@ if __name__ == "__main__":
             print(time.ctime(),f"  Starting Worker{plural}")
             multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished))
             multi.start()
+        loadani.start()
         while finished.qsize() != core_count:
             time.sleep(0.1)
         for num in range(core_count):
             print(str(time.ctime()) +f"   Stopping Worker{plural}")
             multi.join()
+            loadani.join()
         while not Mersenne_confirm_status.empty():
             Mersenne_confirm_error.append(Mersenne_confirm_status.get())
         if max(Mersenne_confirm_error) == min(Mersenne_confirm_error):
