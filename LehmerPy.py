@@ -27,6 +27,7 @@ if __name__ == "__main__":
     finished = Queue()
     Mersenne_confirm_error = []
     Mersenne_primes = []
+    ex = False
 
 def convertTuple(tup): 
     str =  ''.join(tup) 
@@ -88,7 +89,17 @@ def wait(waitsetc):
         wait = str(input("\nPress enter to exit..."))
     clear()
 
-def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished):
+def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex):
+    try:
+        if ex:
+            expand_1 = "2^"
+            expand_2 = "-1"
+        else:
+            expand_1 = ""
+            expand_2 = ""
+    except BaseException:
+        expand_1 = ""
+        expand_2 = ""
     for counter in range(start_var+1, passes + 1, var):
         s = 4
         m = 2**p - 1
@@ -98,13 +109,23 @@ def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, fin
             print(time.ctime(), colors.GREEN+f"  Pass {counter} completed"+colors.END)
             Mersenne_confirm_status.put(0)
         else:
-            print(time.ctime(),f"  {p} is not a Mersenne Prime")
+            print(time.ctime(),f"  {expand_1}{p}{expand_2} is not a Mersenne Prime")
             Mersenne_confirm_status.put(1)
     finished.put(1)
       
         
 
-def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished):
+def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished, ex):
+    try:
+        if ex:
+            expand_1 = "2^"
+            expand_2 = "-1"
+        else:
+            expand_1 = ""
+            expand_2 = ""
+    except BaseException:
+        expand_1 = ""
+        expand_2 = ""
     for p in range(p_start_int + start_var, max + 1, var):
         s = 4
         m = 2**p - 1
@@ -112,12 +133,12 @@ def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_prim
             s = ((s*s)-2) % m
         if s == 0:
             Mersenne_primes_queue.put(p)
-            print(str(time.ctime()) + colors.GREEN+f"  Mersenne Prime Found:  {p}"+ colors.END)
+            print(str(time.ctime()) + colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{p}{expand_2}"+ colors.END)
         p += core_count
     finished.put(1)
 
-def loading_animation(wait_between, finished):
-    while finished.qsize() == 0:
+def loading_animation(wait_between, finished, core_count):
+    while finished.qsize() != core_count:
         print("|", end="\r")
         time.sleep(wait_between)
         print("/", end="\r")
@@ -127,6 +148,7 @@ def loading_animation(wait_between, finished):
         print("\ ", end="\r")
         time.sleep(wait_between)
         hide_cursor()
+    print(" ", end="\r")
 
 
 if __name__ == "__main__":
@@ -167,10 +189,10 @@ if __name__ == "__main__":
             print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
             core_count = fallback_core_count
 
-        loadani = Process(target=loading_animation, args=(0.1, finished))        
+        loadani = Process(target=loading_animation, args=(0.1, finished, core_count))        
         for num in range(core_count):
             print(str(time.ctime()) + "  Starting Workers")
-            multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished))
+            multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex))
             multi.start()
         loadani.start()
         while finished.qsize() != core_count:
@@ -208,14 +230,14 @@ if __name__ == "__main__":
             core_count = int(passes)
             if core_count <= 0:
                 core_count = 1
-        loadani = Process(target=loading_animation, args=(0.1, finished)) 
+        loadani = Process(target=loading_animation, args=(0.1, finished, core_count)) 
         for num in range(core_count):
             if passes == 1:
                 plural = " "
             else:
                 plural = "s"
             print(time.ctime(),f"  Starting Worker{plural}")
-            multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished))
+            multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished, ex))
             multi.start()
         loadani.start()
         while finished.qsize() != core_count:
