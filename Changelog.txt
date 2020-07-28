@@ -1,0 +1,3 @@
+Base Build released V1.0 - Jul 28 2020
+Py- Pyc - exe
+LehmerPy10
