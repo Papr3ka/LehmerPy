@@ -1,8 +1,6 @@
-#/usr/bin/env pypy3
-# Put "!" infront of line 1 to make compatible with linux
-
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020 Benjamin Yao
+
 
 import os
 import sys
@@ -28,7 +26,17 @@ if __name__ == "__main__":
     finished = Queue()
     Mersenne_confirm_error = []
     Mersenne_primes = []
+
+    #Display primes as exponents
+    #Defualt False
     ex = False
+
+    #LehmerPy V1.0 Stable
+    version = 10
+
+    #Animation Speed - Smaller value = faster
+    #Defualt 0.1
+    loadani_speed = 0.1
 
 def convertTuple(tup): 
     str =  ''.join(tup) 
@@ -41,7 +49,7 @@ if os.name == 'nt':
     class _CursorInfo(ctypes.Structure):
         _fields_ = [("size", ctypes.c_int),
                     ("visible", ctypes.c_byte)]
-
+#not my code
 def hide_cursor():
     if os.name == 'nt':
         ci = _CursorInfo()
@@ -52,7 +60,7 @@ def hide_cursor():
     elif os.name == 'posix':
         sys.stdout.write("\033[?25l")
         sys.stdout.flush()
-
+#still not mine
 def show_cursor():
     if os.name == 'nt':
         ci = _CursorInfo()
@@ -64,6 +72,7 @@ def show_cursor():
         sys.stdout.write("\033[?25h")
         sys.stdout.flush()
 
+#Everything past here is mine
 class colors:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
@@ -138,6 +147,7 @@ def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_prim
         p += core_count
     finished.put(1)
 
+# This is the Wheel animation
 def loading_animation(wait_between, finished, core_count):
     while finished.qsize() != core_count:
         print("|", end="\r")
@@ -154,6 +164,9 @@ def loading_animation(wait_between, finished, core_count):
 
 if __name__ == "__main__":
     clear()
+
+    # ACSII Art
+    # 3x
     acsii_title = int(time.time_ns()/1000) % 4
     if acsii_title == 0:
         print(r" _/\\\_____________________________/\\\___________________________________________________________/\\\\\\\\\\\\\_________________        ")        
@@ -189,12 +202,15 @@ if __name__ == "__main__":
         print(r"/_____/\___/_/ /_/_/ /_/ /_/\___/_/  /_/    \__, /  ")
         print(r"                                           /____/   ")
     print("\n\n")
+    version /= 10
+    print(f"v{version}\n")
     print("1:"+colors.BOLD+"R"+colors.END+"ange - Will Calculate Mersenne Primes in a specific range")
     print("2:"+colors.BOLD+"C"+colors.END+"onfirm - Will Confirm if a number is a Mersenne Prime or not")
     try:
         mode = input("MODE:")
     except:
         pass
+        # Range
     if str(mode) == "1" or mode == "range" or mode == "Range" or mode == "R" or mode == "r":
         print("\nRange")
         try:
@@ -215,7 +231,7 @@ if __name__ == "__main__":
             print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
             core_count = fallback_core_count
 
-        loadani = Process(target=loading_animation, args=(0.1, finished, core_count))        
+        loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count))        
         for num in range(core_count):
             print(str(time.ctime()) + "  Starting Workers")
             multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex))
@@ -236,6 +252,7 @@ if __name__ == "__main__":
             print("2^"+str(x)+"-1 =", 2**x - 1)
         show_cursor()
         wait(0)
+    # Confirm
     if str(mode) == "2" or mode == "confirm" or mode == "Confirm" or mode == "C" or mode == "c":
         print("\nConfirmation")
         try:
@@ -256,7 +273,7 @@ if __name__ == "__main__":
             core_count = int(passes)
             if core_count <= 0:
                 core_count = 1
-        loadani = Process(target=loading_animation, args=(0.1, finished, core_count)) 
+        loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count)) 
         for num in range(core_count):
             if passes == 1:
                 plural = " "
@@ -284,3 +301,4 @@ if __name__ == "__main__":
             print(len(Mersenne_confirm_error) - max(set(Mersenne_confirm_error), key=Mersenne_confirm_error.count), " Errors Detected")
         show_cursor()
         wait(0)
+# End of Program
