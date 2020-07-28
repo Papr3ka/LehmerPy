@@ -12,6 +12,7 @@ import multiprocessing
 from multiprocessing import Process, Queue
 
 #Initialize Phase
+p_start_int = 2
 max_p_value = 10**99
 start_state = False
 core_count = os.cpu_count()
