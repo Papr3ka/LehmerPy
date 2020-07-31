@@ -1,3 +1,13 @@
 Base Build released V1.0 - Jul 28 2020
 Py- Pyc - exe
 LehmerPy10
+
+V1.1 - Jul 30 2020
+Changed
+-Only odd numbers can be tested
+
+Fixed
+-Won't start if MIN was set less than 2
+
+Added
+-A number beside the progress wheel to show the most recent number being checked (updates every 0.4s)
