@@ -26,17 +26,21 @@ if __name__ == "__main__":
     finished = Queue()
     Mersenne_confirm_error = []
     Mersenne_primes = []
+    
 
     #Display primes as exponents
     #Defualt False
     ex = False
 
-    #LehmerPy V1.0 Stable
-    version = 10
+    #LehmerPy V1.1
+    version = 11
+    beta = False
 
     #Animation Speed - Smaller value = faster
     #Defualt 0.1
     loadani_speed = 0.1
+
+    odd = True
 
 def convertTuple(tup): 
     str =  ''.join(tup) 
@@ -97,19 +101,22 @@ def wait(waitsetc):
         wait = str(input("Press enter to continue..."))
     if waitsetc == 0:
         wait = str(input("\nPress enter to exit..."))
-    clear()
+        exit()
 
 def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex):
     try:
         if ex:
             expand_1 = "2^"
             expand_2 = "-1"
+            mstr = ""
         else:
             expand_1 = ""
             expand_2 = ""
+            mstr = "M"
     except BaseException:
         expand_1 = ""
         expand_2 = ""
+        mstr = "M"
     for counter in range(start_var+1, passes + 1, var):
         s = 4
         m = 2**p - 1
@@ -119,47 +126,86 @@ def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, fin
             print(time.ctime(), colors.GREEN+f"  Pass {counter} completed"+colors.END)
             Mersenne_confirm_status.put(0)
         else:
-            print(time.ctime(),f"  {expand_1}{p}{expand_2} is not a Mersenne Prime")
+            print(time.ctime(), colors.YELLOW+f"  {expand_1}{mstr}{p}{expand_2} is not a Mersenne Prime"+colors.END)
             Mersenne_confirm_status.put(1)
     finished.put(1)
       
         
 
-def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished, ex):
+def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished, ex, odd, progress):
     try:
         if ex:
             expand_1 = "2^"
             expand_2 = "-1"
+            m = ""
         else:
             expand_1 = ""
             expand_2 = ""
+            mstr = "M"
     except BaseException:
         expand_1 = ""
         expand_2 = ""
-    for p in range(p_start_int + start_var, max + 1, var):
-        s = 4
-        m = 2**p - 1
-        for x in range(0, p-2):
-            s = ((s*s)-2) % m
-        if s == 0:
-            Mersenne_primes_queue.put(p)
-            print(str(time.ctime()) + colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{p}{expand_2}"+ colors.END)
-        p += core_count
+        mstr = "M"
+    if odd:
+        for p in range(p_start_int + start_var*2-1, max + 1, var*2):
+            if progress.empty():
+                progress.put(p)
+            s = 4
+            m = 2**p - 1
+            for x in range(0, p-2):
+                s = ((s*s)-2) % m
+            if s == 0:
+                Mersenne_primes_queue.put(p)
+                print(str(time.ctime()), colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.END)
+            p += core_count
+    else:
+        for p in range(p_start_int + start_var, max + 1, var):
+            if progress.empty():
+                progress.put(p)
+            s = 4
+            m = 2**p - 1
+            for x in range(0, p-2):
+                s = ((s*s)-2) % m
+            if s == 0:
+                Mersenne_primes_queue.put(p)
+                print(str(time.ctime()), colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.END)
+            p += core_count
     finished.put(1)
 
 # This is the Wheel animation
-def loading_animation(wait_between, finished, core_count):
-    while finished.qsize() != core_count:
-        print("|", end="\r")
-        time.sleep(wait_between)
-        print("/", end="\r")
-        time.sleep(wait_between)
-        print("-", end="\r")
-        time.sleep(wait_between)
-        print("\ ", end="\r")
-        time.sleep(wait_between)
-        hide_cursor()
-    print(" ", end="\r")
+def loading_animation(wait_between, finished, core_count, progress="progress"):
+    if not(progress == "progress"):
+        avg_prog = []
+        progress_stat = 3
+        while finished.qsize() != core_count:
+            try:
+                avg_prog.clear()
+                for x in range(core_count):
+                    avg_prog.append(progress.get())
+                progress_stat = int(sum(avg_prog)/core_count)
+            except:
+                pass
+            print("| ", progress_stat, end="\r")
+            time.sleep(wait_between)
+            print("/ ", progress_stat, end="\r")
+            time.sleep(wait_between)
+            print("- ", progress_stat, end="\r")
+            time.sleep(wait_between)
+            print("\ ", progress_stat, end="\r")
+            time.sleep(wait_between)
+            hide_cursor()
+    else:
+        while finished.qsize() != core_count:
+            print("| ", end="\r")
+            time.sleep(wait_between)
+            print("/ ", end="\r")
+            time.sleep(wait_between)
+            print("- ", end="\r")
+            time.sleep(wait_between)
+            print("\ ", end="\r")
+            time.sleep(wait_between)
+            hide_cursor()
+    print("                                                                                                                                                                                            ", end="\r")
 
 
 if __name__ == "__main__":
@@ -203,26 +249,30 @@ if __name__ == "__main__":
         print(r"                                           /____/   ")
     print("\n\n")
     version /= 10
-    print(f"v{version}\n")
+    if beta:
+        beta = "b"
+    else:
+        beta = ""
+    print(f"v{version}{beta}\n")
     print("1:"+colors.BOLD+"R"+colors.END+"ange - Will Calculate Mersenne Primes in a specific range")
     print("2:"+colors.BOLD+"C"+colors.END+"onfirm - Will Confirm if a number is a Mersenne Prime or not")
     try:
         mode = input("MODE:")
     except:
-        pass
+        exit()
         # Range
     if str(mode) == "1" or mode == "range" or mode == "Range" or mode == "R" or mode == "r":
         print("\nRange")
         try:
             p_start_int = int(input("MIN:"))
-            if p_start_int <= 2:
-                pstart_int = 2
         except:
             pass
         try:
             max_p_value = int(input("MAX:"))
         except:
-            pass
+            exit()
+        if p_start_int <= 2:
+            p_start_int = 2
         hide_cursor()
         print("\n")
         fallback_core_count = 2
@@ -230,20 +280,26 @@ if __name__ == "__main__":
             print(str(time.ctime()),"  "+colors.RED+"ERROR: Unable to retreive core count"+colors.END)
             print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
             core_count = fallback_core_count
-
-        loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count))        
+        progress = multiprocessing.JoinableQueue(core_count)
+        loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count, progress))        
         for num in range(core_count):
-            print(str(time.ctime()) + "  Starting Workers")
-            multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex))
+            print(str(time.ctime()), "  Starting Workers")
+            multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex, odd, progress))
             multi.start()
         loadani.start()
         while finished.qsize() != core_count:
             time.sleep(0.1)
+        while not progress.empty():
+            try:
+                progress.get(timeout=0.001)
+            except:
+                pass
+        progress.close()
+        loadani.terminate()
         for num in range(core_count):
-            print(str(time.ctime()) +"  Stopping Workers")
+            print(str(time.ctime()), "  Stopping Workers")
             multi.join()
-            loadani.join()
-        Mersenne_primes.sort()
+        print(str(time.ctime()), "  Finishing")
         while not Mersenne_primes_queue.empty():
             Mersenne_primes.append(Mersenne_primes_queue.get())
         Mersenne_primes.sort()
@@ -262,7 +318,7 @@ if __name__ == "__main__":
         try:
             passes = int(input("Passes:"))
         except:
-            pass
+            exit()
         hide_cursor()
         fallback_core_count = 2
         if core_count == 0:
@@ -288,7 +344,8 @@ if __name__ == "__main__":
         for num in range(core_count):
             print(str(time.ctime()) +f"   Stopping Worker{plural}")
             multi.join()
-            loadani.join()
+        print(str(time.ctime())+"   Finishing")
+        loadani.terminate()
         while not Mersenne_confirm_status.empty():
             Mersenne_confirm_error.append(Mersenne_confirm_status.get())
         if max(Mersenne_confirm_error) == min(Mersenne_confirm_error):
@@ -301,4 +358,6 @@ if __name__ == "__main__":
             print(len(Mersenne_confirm_error) - max(set(Mersenne_confirm_error), key=Mersenne_confirm_error.count), " Errors Detected")
         show_cursor()
         wait(0)
+    else:
+        exit()
 # End of Program
