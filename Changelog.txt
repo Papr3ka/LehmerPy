@@ -11,3 +11,10 @@ Fixed
 
 Added
 -A number beside the progress wheel to show the most recent number being checked (updates every 0.4s)
+
+V1.2 - Aug 1 2020
+Added
+-Command-line arguments
+-Ability to write an output file
+
+Changed how the progress tracker works
