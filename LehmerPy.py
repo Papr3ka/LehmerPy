@@ -111,7 +111,7 @@ if __name__ == "__main__":
                 break
     if "/?" in arguments or "?" in arguments:
         print("\n")
-        print(f"Usage: {file_name} [-all] [-dc] [-e] [-j int] [-l float] [-o name]")
+        print(f"Usage: LehmerPy [-all] [-dc] [-e] [-j int] [-l float] [-o name]")
         print("\n")
         print("Options:")
         print("    -all           Tests all numbers")
