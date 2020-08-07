@@ -41,7 +41,7 @@ if __name__ == "__main__":
     ex = False
 
     #LehmerPy V1.2
-    version = 12
+    version = 13
     beta = False
 
     #Animation Speed - Smaller value = faster
@@ -124,10 +124,6 @@ if __name__ == "__main__":
 
         sys.exit(0)
 
-def convertTuple(tup): 
-    str =  ''.join(tup) 
-    return str
-
 if os.name == 'nt':
     import msvcrt
     import ctypes
@@ -159,35 +155,28 @@ def show_cursor():
         sys.stdout.flush()
 
 #Everything past here is mine
+class colors():
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 if "-dc" in arguments:
-    dc = True
-else:
-    dc = False
-if dc:
-    class colors:
-        PURPLE = ''
-        CYAN = ''
-        DARKCYAN = ''
-        BLUE = ''
-        GREEN = ''
-        YELLOW = ''
-        RED = ''
-        BOLD = ''
-        UNDERLINE = ''
-        END = ''
-else:
-    class colors:
-        PURPLE = '\033[95m'
-        CYAN = '\033[96m'
-        DARKCYAN = '\033[36m'
-        BLUE = '\033[94m'
-        GREEN = '\033[92m'
-        YELLOW = '\033[93m'
-        RED = '\033[91m'
-        BOLD = '\033[1m'
-        UNDERLINE = '\033[4m'
-        END = '\033[0m'
-
+    colors.PURPLE = ''
+    colors.CYAN = ''
+    colors.DARKCYAN = ''
+    colors.BLUE = ''
+    colors.GREEN = ''
+    colors.YELLOW = ''
+    colors.RED = ''
+    colors.BOLD = ''
+    colors.UNDERLINE = ''
+    colors.END = ''
 def clear():
     if platform.system() == 'Windows':
         os.system('cls')
@@ -202,16 +191,22 @@ def wait(waitsetc):
         wait = str(input("\nPress enter to exit..."))
         sys.exit(0)
 
-def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex):
+def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex, arguments):
+    if "-dc" in arguments:
+        colors.PURPLE = ''
+        colors.CYAN = ''
+        colors.DARKCYAN = ''
+        colors.BLUE = ''
+        colors.GREEN = ''
+        colors.YELLOW = ''
+        colors.RED = ''
+        colors.BOLD = ''
+        colors.UNDERLINE = ''
+        colors.END = ''
     try:
-        if ex:
-            expand_1 = "2^"
-            expand_2 = "-1"
-            mstr = ""
-        else:
-            expand_1 = ""
-            expand_2 = ""
-            mstr = "M"
+        expand_1 = "2^" if ex else ""
+        expand_2 = "-1" if ex else ""
+        mstr = "" if ex else "M"
     except BaseException:
         expand_1 = ""
         expand_2 = ""
@@ -231,16 +226,22 @@ def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, fin
       
         
 
-def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished, ex, odd, progress="progress"):
+def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished, ex, odd, arguments, progress="progress"):
+    if "-dc" in arguments:
+        colors.PURPLE = ''
+        colors.CYAN = ''
+        colors.DARKCYAN = ''
+        colors.BLUE = ''
+        colors.GREEN = ''
+        colors.YELLOW = ''
+        colors.RED = ''
+        colors.BOLD = ''
+        colors.UNDERLINE = ''
+        colors.END = ''
     try:
-        if ex:
-            expand_1 = "2^"
-            expand_2 = "-1"
-            mstr = ""
-        else:
-            expand_1 = ""
-            expand_2 = ""
-            mstr = "M"
+        expand_1 = "2^" if ex else ""
+        expand_2 = "-1" if ex else ""
+        mstr = "" if ex else "M"
     except BaseException:
         expand_1 = ""
         expand_2 = ""
@@ -252,11 +253,12 @@ def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_prim
                     progress.put(p)
             s = 4
             m = 2**p - 1
-            for x in range(0, p-2):
-                s = ((s*s)-2) % m
-            if s == 0:
-                Mersenne_primes_queue.put(p)
-                print(str(time.ctime()), colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.END)
+            if m % 5 != 0:
+                for x in range(0, p-2):
+                    s = ((s*s)-2) % m
+                if s == 0:
+                    Mersenne_primes_queue.put(p)
+                    print(str(time.ctime()), colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.END)
             p += core_count
     else:
         for p in range(p_start_int + start_var, max + 1, var):
@@ -384,10 +386,11 @@ if __name__ == "__main__":
         if core_count <= 0:
             print(str(time.ctime()),"  "+colors.RED+"ERROR: Unable to retreive core count"+colors.END)
             print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
-            core_count = fallback_core_count        
+            core_count = fallback_core_count
+        start_time = time.time()        
         for num in range(core_count):
             print(str(time.ctime()), "  Starting Workers")
-            multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex, odd, progress))
+            multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex, odd, arguments, progress))
             multi.start()
         if loadani_speed != -1:
             loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count, progress))
@@ -405,24 +408,25 @@ if __name__ == "__main__":
         for num in range(core_count):
             print(str(time.ctime()), "  Stopping Workers")
             multi.join()
+        end_time = time.time()
         print(str(time.ctime()), "  Finishing")
         while not Mersenne_primes_queue.empty():
             Mersenne_primes.append(Mersenne_primes_queue.get())
         Mersenne_primes.sort()
-        print("\n")
+        time_taken = '%.4f'%(end_time - start_time)
+        unit = "seconds"
+        print(f"\nCompute Time: {time_taken} {unit}\n")
         if out_file:
             output = open(file_path + custom_file,"a")
             output.write("\n\n---------------------------------------------------------------------------------------\n")
             output.write(f"{platform.processor()}\n")
             output.write(f"Date: {time.ctime()}\n")
             output.write(f"Mode: Range from {p_start_int} to {max_p_value}\n")
+            output.write(f"Compuite Time: {time_taken} {unit}\n")
         for x in Mersenne_primes:
             print("2^"+str(x)+"-1 =", 2**x-1)
             if out_file:
-                if len(str(2**x-1)) == 1:
-                    plural = ""
-                else:
-                    plural = "s"
+                plural = " " if len(str(2**int(x)-1)) == 1 else "s"
                 output.write(f"\n2^{x}-1   ---   {len(str(2**x-1))} Digit{plural}\n")
                 output.write(f"{2**x-1}\n")
         if out_file:
@@ -446,6 +450,7 @@ if __name__ == "__main__":
             sys.exit(0)
         hide_cursor()
         fallback_core_count = 2
+        print(f"\n\n{platform.processor()}\n")
         if core_count <= 0:
             print(str(time.ctime()),"  "+colors.RED+"ERROR: Unable to retreive core count"+colors.END)
             print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
@@ -455,26 +460,28 @@ if __name__ == "__main__":
             if core_count <= 0:
                 core_count = 1
         for num in range(core_count):
-            if passes == 1:
-                plural = " "
-            else:
-                plural = "s"
+            plural = " " if passes == 1 else "s"
             print(time.ctime(),f"  Starting Worker{plural}")
-            multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished, ex))
+            multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished, ex, arguments))
             multi.start()
         if loadani_speed != -1:
             loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count)) 
             loadani.start()
         while finished.qsize() != core_count:
             time.sleep(0.1)
+        end_time = time.time() 
         for num in range(core_count):
             print(str(time.ctime()) +f"   Stopping Worker{plural}")
             multi.join()
+        end_time = time.time()
         print(str(time.ctime())+"   Finishing")
         if loadani_speed != -1:
             loadani.terminate()
         while not Mersenne_confirm_status.empty():
             Mersenne_confirm_error.append(Mersenne_confirm_status.get())
+        time_taken = '%.4f'%(end_time - start_time)
+        unit = "seconds"
+        print(f"\nCompute Time: {time_taken} {unit}\n")
         if max(Mersenne_confirm_error) == min(Mersenne_confirm_error):
             print("\nNo Errors Detected")
             error = False
@@ -490,23 +497,15 @@ if __name__ == "__main__":
             output.write("\n\n---------------------------------------------------------------------------------------\n")
             output.write(f"{platform.processor()}\n")
             output.write(f"Date: {time.ctime()}\n")
-            if passes > 1:
-                plural = "es"
-            else:
-                plural = ""
+            plural = "es" if passes > 1 else ""
             output.write(f"Mode: Confirm {p} with {passes} pass{plural}\n")
-            if error != 1:
-                plural = "s"
-            else:
-                plural = ""
+            output.write(f"Compuite Time: {time_taken} {unit}\n")
+            plural = "s" if error != 2 else ""
             if error:
                 output.write("Error Detected")
             else:
-                output.write("No error detected")
-            if len(str(2**p-1)) == 1:
-                plural = ""
-            else:
-                plural = "s"
+                output.write("No errors detected")
+            plural = "" if len(str(2**p-1)) == 1 else "s"
             output.write(f"\n\n2^{p}-1   ---   {len(str(2**p-1))} Digit{plural}\n")
             output.write(f"{2**p-1}\n")
             output.write("---------------------------------------------------------------------------------------")
