@@ -1,26 +1,26 @@
-#Changelog
+# Changelog
 
 
-###V1.4 Aug 8 2020
+### V1.4 Aug 8 2020
 Major Optimizations to LL algorithm
 added -ms option for fastest compute time
 added ability to use commas when typing in numbers
 
-###V1.3 - Aug 6 2020
+### V1.3 - Aug 6 2020
 Changes
 -Code optimizations
 
 Fixed bug where -dc still had colours
 Added time
 
-###V1.2 - Aug 1 2020
+### V1.2 - Aug 1 2020
 Added
 -Command-line arguments
 -Ability to write an output file
 
 Changed how the progress tracker works
 
-###V1.1 - Jul 30 2020
+### V1.1 - Jul 30 2020
 Changed
 -Only odd numbers can be tested
 
