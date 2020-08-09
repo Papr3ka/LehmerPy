@@ -2,6 +2,7 @@
 ![](https://img.shields.io/badge/Version-1.4-blue)
 ![Lines of Code](https://tokei.rs/b1/github/Papr3ka/LehmerPy?category=code)
 ![](https://img.shields.io/github/repo-size/Papr3ka/LehmerPy)
+![](https://img.shields.io/badge/python-v3.7-blue)
 
 A Program made to search for Mersenne primes
 
@@ -23,8 +24,8 @@ Options:
 ```
 
 ### Range
-Calculates if 2^n-1 is prime within a givin range n
+Calculates if 2^p-1 is prime within a givin range of p
 
 
 ### Confirm
-Performs multiple passes on 2^n-1 to confirm that it is prime 
+Performs multiple passes on 2^p-1 to confirm that it is prime 
