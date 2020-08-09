@@ -121,7 +121,10 @@ if __name__ == "__main__":
         maxspeed = True
         loadani_speed = -1
         odd = True
-    dc = "" if release_ver < 10 else "[-dc]"
+    try:
+        dc = "" if release_ver < 10 and version_get else "[-dc]"
+    except:
+        pass
     if "/?" in arguments or "?" in arguments:
         print("\n")
         print(f"Usage: {file_name} [-all] {dc} [-e] [-j int] [-l float] [-ms]")
