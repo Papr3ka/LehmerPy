@@ -1,10 +1,17 @@
 # Changelog
 
+## V1.5 Aug 17 2020
+Added
+- ability to view residue of confirmation
+- file size difference when writing output file
+
+Removed
+- feature that would disable blinking cursor
 
 ## V1.4 Aug 8 2020
-Major Optimizations to LL algorithm
-added -ms option for fastest compute time
-added ability to use commas when typing in numbers
+- Major Optimizations to LL algorithm
+- added -ms option for fastest compute time
+- added ability to use commas when typing in numbers
 
 ## V1.3 - Aug 6 2020
 Changed
