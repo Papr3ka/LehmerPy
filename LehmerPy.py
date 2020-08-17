@@ -12,7 +12,6 @@ from multiprocessing import Process, Queue
 #Initialize Phase
 p_start_int = 2
 max_p_value = 10**99
-start_state = False
 core_count = os.cpu_count()
 arguments = sys.argv
 release_ver = platform.release()
@@ -24,12 +23,18 @@ except:
     version_get = False
 #open files + Initial
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    multiprocessing.set_start_method('spawn')
     file_path = str(__file__)
     Mersenne_primes_queue = Queue()
     Mersenne_confirm_status = Queue()
     finished = Queue()
+    manager = multiprocessing.Manager()
+    residue = manager.Queue()
+    residue_list = []
     Mersenne_confirm_error = []
     Mersenne_primes = []
+    perm_stat = True
     slash1 = "\ "
     slash2 = "/"
     reserved = ["reserved", "/", "?", "%", "*", ":", "|", "<", ">", '"', "-"]
@@ -45,14 +50,13 @@ if __name__ == "__main__":
     #Defualt False
     ex = False
 
-    #LehmerPy V1.4 Stable
-    version = 14
+    #LehmerPy V1.5 Stable
+    version = 15
     beta = False
 
     #Animation Speed - Smaller value = faster, -1 = off
     #Defualt 0.1
     loadani_speed = 0.1
-
 
     odd = True
 
@@ -71,6 +75,8 @@ if __name__ == "__main__":
             core_count = int(arguments[arguments.index("-j") + 1])
         except: 
             pass
+        if core_count <= 0:
+            core_count = 1
     else:       
         for x in arguments:
             x = str(x)
@@ -79,7 +85,9 @@ if __name__ == "__main__":
                     core_count = int(x[2:len(x)])
                 except:
                     pass
-                break   
+                break  
+        if core_count <= 0:
+            core_count = 1
     if "-l" in arguments:
         try:
             loadani_speed = float(arguments[arguments.index("-l") + 1])
@@ -122,17 +130,17 @@ if __name__ == "__main__":
         loadani_speed = -1
         odd = True
     try:
-        dc = "" if release_ver < 10 and version_get else "[-dc]"
+        dc = " " if release_ver < 10 and version_get else " [-dc]"
     except:
         pass
     if "/?" in arguments or "?" in arguments:
         print("\n")
-        print(f"Usage: {file_name} [-all] {dc} [-e] [-j int] [-l float] [-ms]")
+        print(f"Usage: {file_name} [-all]{dc} [-e] [-j int] [-l float] [-ms]")
         print(f"{' '*len(file_name)}        [-o name]")
         print("\n")
         print("Options:")
         print("    -all           Tests all numbers")
-        if dc == "[-dc]":
+        if dc == " [-dc]":
             print("    -dc            Disables ANSI colors")
         print("    -e             Displays Mersenne primes as a power")
         print("    -j int         Threads to use")
@@ -142,76 +150,20 @@ if __name__ == "__main__":
         print("\n")
 
         sys.exit(0)
-
-if os.name == 'nt':
-    import msvcrt
-    import ctypes
-
-    class _CursorInfo(ctypes.Structure):
-        _fields_ = [("size", ctypes.c_int),
-                    ("visible", ctypes.c_byte)]
-#not my code
-def hide_cursor():
-    if os.name == 'nt':
-        ci = _CursorInfo()
-        handle = ctypes.windll.kernel32.GetStdHandle(-11)
-        ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
-        ci.visible = False
-        ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
-    elif os.name == 'posix':
-        sys.stdout.write("\033[?25l")
-        sys.stdout.flush()
-#still not mine
-def show_cursor():
-    if os.name == 'nt':
-        ci = _CursorInfo()
-        handle = ctypes.windll.kernel32.GetStdHandle(-11)
-        ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
-        ci.visible = True
-        ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
-    elif os.name == 'posix':
-        sys.stdout.write("\033[?25h")
-        sys.stdout.flush()
-
 #Everything past here is mine
-class colors():
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    END = '\033[0m'
-if "-dc" in arguments or (version_get and release_ver < 10):
-    colors.PURPLE = ''
-    colors.CYAN = ''
-    colors.DARKCYAN = ''
-    colors.BLUE = ''
-    colors.GREEN = ''
-    colors.YELLOW = ''
-    colors.RED = ''
-    colors.BOLD = ''
-    colors.UNDERLINE = ''
-    colors.END = ''
-def clear():
-    if platform.system() == 'Windows':
-        os.system('cls')
-    else:
-        os.system('clear')
-
-def wait(waitsetc):
-    if waitsetc == 1:
-        clear()
-        wait = str(input("Press enter to continue..."))
-    if waitsetc == 0:
-        wait = str(input("\nPress enter to exit..."))
-        sys.exit(0)
-
-def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex, arguments):
-    if "-dc" in arguments or (version_get and release_ver < 10):
+class colors:
+    def __init__(self, PURPLE, CYAN, DARKCYAN, BLUE, GREEN, YELLOW, RED, BOLD, UNDERLINE, END):
+        self.PURPLE = PURPLE
+        self.CYAN = CYAN
+        self.DARKCYAN = DARKCYAN
+        self.BLUE = BLUE
+        self.GREEN = GREEN
+        self.YELLOW = YELLOW
+        self.RED = RED
+        self.BOLD = BOLD
+        self.UNDERLINE = UNDERLINE 
+        self.END = END
+    def rmcolor():
         colors.PURPLE = ''
         colors.CYAN = ''
         colors.DARKCYAN = ''
@@ -222,6 +174,50 @@ def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, fin
         colors.BOLD = ''
         colors.UNDERLINE = ''
         colors.END = ''
+    def encolor():
+        colors.PURPLE = '\033[95m'
+        colors.CYAN = '\033[96m'
+        colors.DARKCYAN = '\033[36m'
+        colors.BLUE = '\033[94m'
+        colors.GREEN = '\033[92m'
+        colors.YELLOW = '\033[93m'
+        colors.RED = '\033[91m'
+        colors.BOLD = '\033[1m'
+        colors.UNDERLINE = '\033[4m'
+        colors.END = '\033[0m'
+
+
+if "-dc" in arguments or (version_get and release_ver < 10):
+    colors.rmcolor()
+else:
+    colors.encolor()        
+
+def clear():
+    if platform.system() == 'Windows':
+        os.system('cls')
+    else:
+        os.system('clear')
+
+def wait(waitsetc):
+    if waitsetc == 2:
+        print("Retry? (Y/N)...\n", end="\r")
+        rpl = str(input())
+        if rpl == "y" or rpl == "Y" or rpl == "Yes" or rpl == "yes" or rpl == "ys":
+            return False
+        else:
+            return True
+    if waitsetc == 1:
+        print("Press enter to continue...", end="\r")
+        wait = str(input())
+    if waitsetc == 0:
+        wait = str(input("\nPress enter to exit..."))
+        sys.exit(0)
+
+def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex, residue, arguments):
+    if "-dc" in arguments or (version_get and release_ver < 10):
+        colors.rmcolor()
+    else:
+        colors.encolor()
     try:
         expand_1 = "2^" if ex else ""
         expand_2 = "-1" if ex else ""
@@ -240,27 +236,21 @@ def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, fin
                 s -= m
             s -= 2
         if s == 0:
-            print(time.ctime(), colors.GREEN+f"  Pass {counter} completed"+colors.END)
+            print(time.ctime(), colors.GREEN+f"  Pass {counter} completed, {expand_1}{mstr}{p}{expand_2} is a Mersenne Prime"+colors.END)
             Mersenne_confirm_status.put(0)
         else:
-            print(time.ctime(), colors.YELLOW+f"  {expand_1}{mstr}{p}{expand_2} is not a Mersenne Prime"+colors.END)
+            print(time.ctime(), colors.YELLOW+f"  Pass {counter} completed, {expand_1}{mstr}{p}{expand_2} is not a Mersenne Prime"+colors.END)
             Mersenne_confirm_status.put(1)
+        residue.put([counter, s])
     finished.put(1)
       
         
 
 def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished, ex, odd, arguments, maxspeed, progress="progress"):
     if "-dc" in arguments or (version_get and release_ver < 10):
-        colors.PURPLE = ''
-        colors.CYAN = ''
-        colors.DARKCYAN = ''
-        colors.BLUE = ''
-        colors.GREEN = ''
-        colors.YELLOW = ''
-        colors.RED = ''
-        colors.BOLD = ''
-        colors.UNDERLINE = ''
-        colors.END = ''
+        colors.rmcolor()
+    else:
+        colors.encolor()
     try:
         expand_1 = "2^" if ex else ""
         expand_2 = "-1" if ex else ""
@@ -325,7 +315,7 @@ def loading_animation(wait_between, finished, core_count, progress="progress"):
             time.sleep(wait_between)
             print("\ ", progress_stat, end="\r")
             time.sleep(wait_between)
-            hide_cursor()
+            
     else:
         while finished.qsize() != core_count:
             print("| ", end="\r")
@@ -336,7 +326,7 @@ def loading_animation(wait_between, finished, core_count, progress="progress"):
             time.sleep(wait_between)
             print("\ ", end="\r")
             time.sleep(wait_between)
-            hide_cursor()
+            
     print("                                                                                                                                                                                            ", end="\r")
 
 
@@ -345,40 +335,37 @@ if __name__ == "__main__":
 
     # ACSII Art
     # 4x
-    acsii_title = int(time.time()*100) % 4
-    if acsii_title == 0:
-        print(r" _/\\\_____________________________/\\\___________________________________________________________/\\\\\\\\\\\\\_________________        ")        
-        print(r" _\/\\\____________________________\/\\\__________________________________________________________\/\\\/////////\\\_______________       ")
-        print(r"  _\/\\\____________________________\/\\\__________________________________________________________\/\\\_______\/\\\____/\\\__/\\\_      ")
-        print(r"   _\/\\\_________________/\\\\\\\\__\/\\\____________/\\\\\__/\\\\\_______/\\\\\\\\___/\\/\\\\\\\__\/\\\\\\\\\\\\\/____\//\\\/\\\__     ")
-        print(r"    _\/\\\_______________/\\\/////\\\_\/\\\\\\\\\\___/\\\///\\\\\///\\\___/\\\/////\\\_\/\\\/////\\\_\/\\\/////////_______\//\\\\\___    ")
-        print(r"     _\/\\\______________/\\\\\\\\\\\__\/\\\/////\\\_\/\\\_\//\\\__\/\\\__/\\\\\\\\\\\__\/\\\___\///__\/\\\_________________\//\\\____   ")
-        print(r"      _\/\\\_____________\//\\///////___\/\\\___\/\\\_\/\\\__\/\\\__\/\\\_\//\\///////___\/\\\_________\/\\\______________/\\_/\\\_____  ")
-        print(r"       _\/\\\\\\\\\\\\\\\__\//\\\\\\\\\\_\/\\\___\/\\\_\/\\\__\/\\\__\/\\\__\//\\\\\\\\\\_\/\\\_________\/\\\_____________\//\\\\/______ ")
-        print(r"        _\///////////////____\//////////__\///____\///__\///___\///___\///____\//////////__\///__________\///_______________\////________")
-    if acsii_title == 1:
-        print(r"  _          _                         _____       ")
-        print(r" | |        | |                       |  __ \      ")
-        print(r" | |     ___| |__  _ __ ___   ___ _ __| |__) |   _ ")
-        print(r" | |    / _ \ '_ \| '_ ` _ \ / _ \ '__|  ___/ | | |")
-        print(r" | |___|  __/ | | | | | | | |  __/ |  | |   | |_| |")
-        print(r" |______\___|_| |_|_| |_| |_|\___|_|  |_|    \__, |")
-        print(r"                                              __/ |")
-        print(r"                                             |___/ ")
-    if acsii_title == 2:
-        print(r" ____          .__                        __________        ")
-        print(r"|    |    ____ |  |__   _____   __________\______   \___.__.")
-        print(r"|    |  _/ __ \|  |  \ /     \_/ __ \_  __ \     ___<   |  |")
-        print(r"|    |__\  ___/|   Y  \  Y Y  \  ___/|  | \/    |    \___  |")
-        print(r"|_______ \___  >___|  /__|_|  /\___  >__|  |____|    / ____|")
-        print(r"        \/   \/     \/      \/     \/                \/     ")
-    if acsii_title == 3:
-        print(r"    __         __                        ____       ")
-        print(r"   / /   ___  / /_  ____ ___  ___  _____/ __ \__  __")
-        print(r"  / /   / _ \/ __ \/ __ `__ \/ _ \/ ___/ /_/ / / / /")
-        print(r" / /___/  __/ / / / / / / / /  __/ /  / ____/ /_/ / ")
-        print(r"/_____/\___/_/ /_/_/ /_/ /_/\___/_/  /_/    \__, /  ")
-        print(r"                                           /____/   ")
+    acsii_title = [r"""_/\\\_____________________________/\\\___________________________________________________________/\\\\\\\\\\\\\_________________                
+_\/\\\____________________________\/\\\__________________________________________________________\/\\\/////////\\\_______________       
+ _\/\\\____________________________\/\\\__________________________________________________________\/\\\_______\/\\\____/\\\__/\\\_      
+  _\/\\\_________________/\\\\\\\\__\/\\\____________/\\\\\__/\\\\\_______/\\\\\\\\___/\\/\\\\\\\__\/\\\\\\\\\\\\\/____\//\\\/\\\__     
+   _\/\\\_______________/\\\/////\\\_\/\\\\\\\\\\___/\\\///\\\\\///\\\___/\\\/////\\\_\/\\\/////\\\_\/\\\/////////_______\//\\\\\___    
+    _\/\\\______________/\\\\\\\\\\\__\/\\\/////\\\_\/\\\_\//\\\__\/\\\__/\\\\\\\\\\\__\/\\\___\///__\/\\\_________________\//\\\____   
+     _\/\\\_____________\//\\///////___\/\\\___\/\\\_\/\\\__\/\\\__\/\\\_\//\\///////___\/\\\_________\/\\\______________/\\_/\\\_____  
+      _\/\\\\\\\\\\\\\\\__\//\\\\\\\\\\_\/\\\___\/\\\_\/\\\__\/\\\__\/\\\__\//\\\\\\\\\\_\/\\\_________\/\\\_____________\//\\\\/______ 
+       _\///////////////____\//////////__\///____\///__\///___\///___\///____\//////////__\///__________\///_______________\////________""",
+r"""  _          _                         _____       
+ | |        | |                       |  __ \      
+ | |     ___| |__  _ __ ___   ___ _ __| |__) |   _ 
+ | |    / _ \ '_ \| '_ ` _ \ / _ \ '__|  ___/ | | |
+ | |___|  __/ | | | | | | | |  __/ |  | |   | |_| |
+ |______\___|_| |_|_| |_| |_|\___|_|  |_|    \__, |
+                                              __/ |
+                                             |___/ """,
+r""" ____          .__                        __________        
+|    |    ____ |  |__   _____   __________\______   \___.__.
+|    |  _/ __ \|  |  \ /     \_/ __ \_  __ \     ___<   |  |
+|    |__\  ___/|   Y  \  Y Y  \  ___/|  | \/    |    \___  |
+|_______ \___  >___|  /__|_|  /\___  >__|  |____|    / ____|
+        \/   \/     \/      \/     \/                \/     """,
+r"""    __         __                        ____       
+   / /   ___  / /_  ____ ___  ___  _____/ __ \__  __
+  / /   / _ \/ __ \/ __ `__ \/ _ \/ ___/ /_/ / / / /
+ / /___/  __/ / / / / / / / /  __/ /  / ____/ /_/ / 
+/_____/\___/_/ /_/_/ /_/ /_/\___/_/  /_/    \__, /  
+                                           /____/   """]
+    acsii_title_op = int(time.time()*100) % len(acsii_title)
+    print(colors.BOLD+acsii_title[acsii_title_op]+colors.END)
     print("\n\n")
     version /= 10
     if beta:
@@ -388,6 +375,7 @@ if __name__ == "__main__":
     print(f"v{version}{beta}\n")
     print("1:"+colors.BOLD+"R"+colors.END+"ange - Will Calculate Mersenne Primes in a specific range")
     print("2:"+colors.BOLD+"C"+colors.END+"onfirm - Will Confirm if a number is a Mersenne Prime or not")
+    
     try:
         mode = input("MODE:")
     except:
@@ -420,7 +408,7 @@ if __name__ == "__main__":
             sys.exit(0)
         if p_start_int <= 2:
             p_start_int = 2
-        hide_cursor()
+        
         print("\n")
         fallback_core_count = 2
         if loadani_speed == -1:
@@ -442,7 +430,7 @@ if __name__ == "__main__":
             loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count, progress))
             loadani.start()
         while finished.qsize() != core_count:
-            time.sleep(0.01)
+            time.sleep(0.0001)
         try:
             while not progress.empty():
                 try:
@@ -456,7 +444,7 @@ if __name__ == "__main__":
             loadani.terminate()
         for num in range(core_count):
             print(str(time.ctime()), "  Stopping Workers")
-            multi.join()
+            multi.terminate()
         end_time = time.time()
         end_date = time.ctime()
         print(str(time.ctime()), "  Finishing")
@@ -478,12 +466,40 @@ if __name__ == "__main__":
                         time_taken /= 7
                         unit = "weeks"
         print(f"\nCompute Time: {time_taken} {unit}\n")
+        plural = "" if len(Mersenne_primes) == 1 else "s"
+        print(f"{colors.UNDERLINE}{colors.BOLD}Mersenne Prime{plural}{colors.END}{colors.END}")
         for x in Mersenne_primes:
-            print("2^"+str(x)+"-1 =", 2**x-1)
+            print(f"2^{x}-1 = {2**x-1}\n")
+        print(f"\n\n{colors.BOLD}{colors.UNDERLINE}Perfect Number{plural}{colors.END}{colors.END}")
+        for x in Mersenne_primes:
+            print(f"2^{x - 1} · (2^{x}-1) = {(2**(x-1))*(2**x-1)}\n")
         if out_file:
+            print("\n\n")
+            while perm_stat:
+                try:
+                    if os.path.exists(file_path + custom_file):
+                        print(f"Writing to file at {file_path}{custom_file}")
+                        original_size = os.path.getsize(file_path + custom_file)
+                    else:
+                        print(f"Generating file at {file_path}{custom_file}")
+                        original_size = 0
+                    with open(file_path + custom_file,"a") as output:
+                        output.write("\n")
+                        perm_stat = False
+                except PermissionError:
+                    print(colors.RED+"ERROR:   Permission to write to file denied"+colors.END)
+                    if wait(2):
+                        perm_stat = False
+                except  IOError:
+                    print(colors.RED+"ERROR:   I/O Error"+colors.END)
+                    if wait(2):
+                        perm_stat = False
             with open(file_path + custom_file,"a") as output:
                 output.write("\n\n---------------------------------------------------------------------------------------\n")
-                output.write(f"{platform.processor()}\n")
+                output.write(f"{file_name} v{version}{beta} Args: ")  
+                for w in range(1, len(arguments)):
+                    output.write(f"{arguments[w]} ")
+                output.write(f"\n{platform.processor()}\n")
                 output.write(f"Mode: Range from {p_start_int} to {max_p_value}\n")
                 output.write(f"Start: {start_date}  End: {end_date}\n")
                 output.write(f"Compute Time: {time_taken} {unit}\n")
@@ -491,8 +507,16 @@ if __name__ == "__main__":
                     plural = " " if len(str(2**int(x)-1)) == 1 else "s"
                     output.write(f"\n2^{x}-1   ---   {len(str(2**x-1))} Digit{plural}\n")
                     output.write(f"{2**x-1}\n")
+                plural = "" if len(Mersenne_primes) == 1 else "s"
+                output.write(f"\nPerfect Number{plural}\n")
+                for x in Mersenne_primes:
+                    output.write(f"2^{x - 1} · (2^{x}-1)\n{(2**(x-1))*(2**x-1)}\n\n")
                 output.write("---------------------------------------------------------------------------------------")
-        show_cursor()
+            if not perm_stat:
+                modified_size = os.path.getsize(file_path + custom_file)
+                sign = "-" if modified_size - original_size < 0 else "+"
+                plural = "" if modified_size - original_size == 0 else "s"
+                print(f"{colors.GREEN}Success{colors.END}\n{custom_file} {sign}{modified_size-original_size} Byte{plural}")            
         print("\n")
         wait(0)
     # Confirm
@@ -523,7 +547,7 @@ if __name__ == "__main__":
             sys.exit(0)
         if passes <= 0 or p <= 0:
             sys.exit(0)
-        hide_cursor()
+        
         fallback_core_count = 2
         print(f"\n\n{platform.processor()}\n")
         if core_count <= 0:
@@ -539,17 +563,18 @@ if __name__ == "__main__":
         for num in range(core_count):
             plural = " " if passes == 1 else "s"
             print(time.ctime(),f"  Starting Worker{plural}")
-            multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished, ex, arguments))
+            multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished, ex, residue, arguments))
             multi.start()
         if loadani_speed != -1:
             loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count)) 
             loadani.start()
         while finished.qsize() != core_count:
-            time.sleep(0.01)
+            time.sleep(0.0001)
         end_time = time.time() 
         end_date = time.ctime()
         for num in range(core_count):
             print(str(time.ctime()) +f"   Stopping Worker{plural}")
+            multi.terminate()
             multi.join()
         print(str(time.ctime())+"   Finishing")
         if loadani_speed != -1:
@@ -571,35 +596,82 @@ if __name__ == "__main__":
                         time_taken /= 7
                         unit = "weeks"
         print(f"\nCompute Time: {time_taken} {unit}\n")
-        if max(Mersenne_confirm_error) == min(Mersenne_confirm_error):
-            print("\nNo Errors Detected")
+        while not residue.empty():
+            residue_list.append(residue.get())
+        residue_list.sort(key=lambda x: x[0])
+        for res in residue_list:
+            print(f"Pass {res[0]}, Residue {res[1]}")
+        if max(residue_list, key=lambda x: x[1]) == min(residue_list, key=lambda x: x[1]):
             error = False
             if max(Mersenne_confirm_error) == 0:
-                print("2^"+str(p)+"-1 =", 2**p - 1, "\nIs a Mersenne Prime")
+                print(f"\n{colors.UNDERLINE}{colors.BOLD}Mersenne Prime{colors.END}{colors.END}\n2^{p}-1 = {2**p - 1}")
+                if not error:
+                    print("No errors detected")
+                print(f"\n{colors.UNDERLINE}{colors.BOLD}Perfect Number{colors.END}{colors.END}\n2^{p - 1} · (2^{p}-1) = {(2**(p-1))*(2**p-1)}")
             else:
-                print("2^"+str(p)+"-1 =", 2**p - 1, "\nIs not a Mersenne Prime")
+                print(f"\n{colors.UNDERLINE}{colors.BOLD}Mersenne Number{colors.END}{colors.END}\n2^{p}-1 = {2**p - 1}")
         else:
             print("Error Detected")
             error = True
         if out_file:
+            print("\n\n")
+            while perm_stat:
+                try:
+                    if os.path.exists(file_path + custom_file):
+                        print(f"Writing to file at {file_path}{custom_file}")
+                        original_size = os.path.getsize(file_path + custom_file)
+                    else:
+                        print(f"Generating file at {file_path}{custom_file}")
+                        original_size = 0
+                    with open(file_path + custom_file,"a") as output:
+                        output.write("\n")
+                        perm_stat = False
+                except PermissionError:
+                    print(colors.RED+"ERROR:   Permission to write to file denied"+colors.END)
+                    if wait(2):
+                        perm_stat = False
+                except IOError:
+                    print(colors.RED+"ERROR:   I/O Error"+colors.END)
+                    if wait(2):
+                        perm_stat = False
             with open(file_path + custom_file,"a") as output:
-                output.write("\n\n---------------------------------------------------------------------------------------\n")
-                output.write(f"{platform.processor()}\n")
+                output.write("\n---------------------------------------------------------------------------------------\n")
+                output.write(f"{file_name} v{version}{beta} Args: ")  
+                for w in range(1, len(arguments)):
+                    output.write(f"{arguments[w]} ")
+                output.write(f"\n{platform.processor()}\n")
                 plural = "es" if passes > 1 else ""
                 output.write(f"Mode: Confirm {p} with {passes} pass{plural}\n")
                 output.write(f"Start: {start_date}  End: {end_date}\n")
                 output.write(f"Compute Time: {time_taken} {unit}\n")
                 plural = "s" if error != 2 else ""
                 if error:
-                    output.write("Error Detected")
+                    output.write("Error Detected\n\n")
                 else:
-                    output.write("No errors detected")
+                    output.write("No errors detected\n\n")
+                for res in residue_list:
+                    output.write(f"Pass {res[0]}, Residue {res[1]}\n")
                 plural = "" if len(str(2**p-1)) == 1 else "s"
-                output.write(f"\n\n2^{p}-1   ---   {len(str(2**p-1))} Digit{plural}\n")
+                output.write(f"\n\n2^{p}-1   ---   {len(str(2**p-1))} Digit{plural}")
+                if not error: 
+                    if max(Mersenne_confirm_error) == 0:
+                        output.write("   ---   is a Mersenne Prime\n")
+                    else:
+                        output.write("   ---   is not a Mersenne Prime\n")
+                else:
+                    output.write("\n")
                 output.write(f"{2**p-1}\n")
+                if max(Mersenne_confirm_error) == 0:
+                    output.write(f"\nPerfect Number\n2^{p - 1} · (2^{p}-1)\n{(2**(p-1))*(2**p-1)}\n")
                 output.write("---------------------------------------------------------------------------------------")
-        show_cursor()
+            if not perm_stat:
+                modified_size = os.path.getsize(file_path + custom_file)
+                sign = "-" if modified_size - original_size < 0 else "+"
+                plural = "" if modified_size - original_size == 0 else "s"
+                print(f"{colors.GREEN}Success{colors.END}\n{custom_file} {sign}{modified_size-original_size} Bytes")
+        
         wait(0)
     else:
         sys.exit(0)
+    
 # End of Program
