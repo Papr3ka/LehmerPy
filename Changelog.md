@@ -9,12 +9,12 @@ Removed
 - feature that would disable blinking cursor
 
 ## V1.4 Aug 8 2020
+Changed
+- Major Optimizations to LL algorithm
+
 Added
 - -ms option for fastest compute time
 - ability to use commas when typing in numbers
-
-Changed
-- Major Optimizations to LL algorithm
 
 ## V1.3 - Aug 6 2020
 Changed
