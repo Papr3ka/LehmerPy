@@ -1,6 +1,6 @@
 # LehmerPy
 ![](https://img.shields.io/badge/Version-1.5-blue?style=flat-square)
-![](https://img.shields.io/github/repo-size/Papr3ka/LehmerPy?style=flat-square?style=flat-square)
+![](https://img.shields.io/github/repo-size/Papr3ka/LehmerPy?style=flat-square)
 ![](https://img.shields.io/badge/python-v3.7-blue?style=flat-square)
 
 ![Lines of Code](https://tokei.rs/b1/github/Papr3ka/LehmerPy?category=code)
