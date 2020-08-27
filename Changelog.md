@@ -2,15 +2,17 @@
 
 ## V1.6 Aug 27 2020
 Added
+
 - -io option for individualing outputting mersenne primes
 - -np option to disable all forms of multiprocessing
-
 Fixed
-- KeyboardInterrupt would cause program to hang
+
+KeyboardInterrupt would cause program to hang
 - Progress wheel was inaccurate
 
 Binary
-- exe is now compiled using link-time optimization
+
+- .exe is now compiled using link-time optimization
 
 ## V1.5 Aug 17 2020
 Added
