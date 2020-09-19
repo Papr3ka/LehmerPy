@@ -832,10 +832,11 @@ r"""    __         __                        ____
             #     print(f"Pass {res[0]}, Residue {res[1]}")
             padding = len(str(max(residue_list, key=lambda k:k[1]))) + len(str(residue_list.index(max(residue_list, key=lambda k:k[1])))) + 8
             columns = 3 if not(version_get and release_ver < 10) else 1 # + 1
+            col_var = int((columns + 1)/2)
             st_length = 0
             high_sec = 0
             rows = len(residue_list) // columns + len(residue_list) % columns
-            for print_var in range(0,len(residue_list)*columns+1, columns):
+            for print_var in range(0,len(residue_list)*columns+1, col_var):
                 try:
                     ind_variation = 0
                     for sp_var in range(0,rows*columns+1,rows):
@@ -961,7 +962,7 @@ r"""    __         __                        ____
                     output.write("No errors detected\n\n")
                 padding = len(str(max(residue_list, key=lambda k:k[1]))) + len(str(residue_list.index(max(residue_list, key=lambda k:k[1])))) + 8
                 rows = len(residue_list) // columns + len(residue_list) % columns
-                for print_var in range(0,len(residue_list)*columns+1, columns):
+                for print_var in range(0,len(residue_list)*columns+1, col_var):
                     try:
                         ind_variation = 0
                         for sp_var in range(0,rows*columns+1,rows):
