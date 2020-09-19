@@ -1,5 +1,5 @@
 # LehmerPy
-![](https://img.shields.io/badge/Version-1.6-blue?style=flat-square)
+![](https://img.shields.io/badge/Version-1.7-blue?style=flat-square)
 ![](https://img.shields.io/github/repo-size/Papr3ka/LehmerPy?style=flat-square)
 ![](https://img.shields.io/badge/python-v3.7-blue?style=flat-square)
 
