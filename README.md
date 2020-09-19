@@ -2,8 +2,7 @@
 ![](https://img.shields.io/badge/Version-1.7-blue?style=flat-square)
 ![](https://img.shields.io/github/repo-size/Papr3ka/LehmerPy?style=flat-square)
 ![](https://img.shields.io/badge/python-v3.7-blue?style=flat-square)
-
-![Lines of Code](https://tokei.rs/b1/github/Papr3ka/LehmerPy?category=code)
+[![Lines Of Code](https://tokei.rs/b1/github/Papr3ka/LehmerPy?category=code)](https://github.com/Papr3ka/LehmerPy)
 
 A Program made to search for Mersenne primes
 
