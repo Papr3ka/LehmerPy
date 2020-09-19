@@ -2,7 +2,7 @@
 
 ## V1.7 Sept 19 2020
 Added
-- MD5 hashes for mersenne primes when using -io
+- MD5 hashes for Mersenne primes when using -io
 - Residues are now displayed neatly in columns
 
 Changes
