@@ -1,5 +1,13 @@
 # Changelog
 
+## V1.7 Sept 19 2020
+Added
+- MD5 hashes for mersenne primes when using -io
+- Residues are now displayed neatly in columns
+
+Changes
+- Major code optimizations
+
 ## V1.6 Aug 27 2020
 Added
 
