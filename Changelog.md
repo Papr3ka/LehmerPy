@@ -13,9 +13,9 @@ Added
 
 - -io option for individualing outputting mersenne primes
 - -np option to disable all forms of multiprocessing
-Fixed
 
-KeyboardInterrupt would cause program to hang
+Fixed
+- KeyboardInterrupt would cause program to hang
 - Progress wheel was inaccurate
 
 Binary
