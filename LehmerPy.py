@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020 Benjamin Yao
-
+# Licenced under the GNU GPL 3.0
 
 import os
 import sys
 import platform
 import time
-import multiprocessing
-from multiprocessing import Process, Queue
 
-#Initialize Phase
+#Global initialize
 p_start_int = 2
-max_p_value = 10**99
+max_p_value = 10**31
 core_count = os.cpu_count()
 arguments = sys.argv
 release_ver = platform.release()
@@ -21,22 +19,274 @@ try:
 except:
     release_ver = 10
     version_get = False
-#open files + Initial
-if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    multiprocessing.set_start_method('spawn')
+
+os.system('') # Make sure all threads do this
+
+class colors:
+    def __init__(self, sysType=None):
+        os.system('') # Somehow this lets ANSI escape codes work
+        self.sysType = sysType
+        self.purple = '\033[95m'
+        self.cyan = '\033[96m'
+        self.darkcyan = '\033[36m'
+        self.blue = '\033[94m'
+        self.green = '\033[92m'
+        self.yellow = '\033[93m'
+        self.red = '\033[91m'
+        self.bold = '\033[1m'
+        self.underline = '\033[4m'
+        self.end = '\033[0m'
+    def rmcolor(self):
+        self.purple = ''
+        self.cyan = ''
+        self.darkcyan = ''
+        self.blue = ''
+        self.green = ''
+        self.yellow = ''
+        self.red = ''
+        self.bold = ''
+        self.underline = ''
+        self.end = ''
+    def encolor(self):
+        self.purple = '\033[95m'
+        self.cyan = '\033[96m'
+        self.darkcyan = '\033[36m'
+        self.blue = '\033[94m'
+        self.green = '\033[92m'
+        self.yellow = '\033[93m'
+        self.red = '\033[91m'
+        self.bold = '\033[1m'
+        self.underline = '\033[4m'
+        self.end = '\033[0m'
+
+    def clear(self):
+        if self.sysType == None:
+            print('\x1b[2J\x1b[H')
+        try:
+            if self.sysType == "nt":
+                os.system('cls')
+            elif self.sysType == "posix" or self.sysType == "java":
+                os.system('clear')
+            else:
+                print('\x1b[2J\x1b[H')
+        except Exception:
+            pass
+
+colors = colors(os.name) # os.name is optional but when used it reduces random times when ANSI codes dont work
+
+def wait(waitsetc):
+    if waitsetc == 2:
+        print("Retry? (Y/N)...\n", end="\r")
+        rpl = str(input())
+        if rpl == "y" or rpl == "Y" or rpl == "Yes" or rpl == "yes" or rpl == "ys":
+            return False
+        else:
+            return True
+    if waitsetc == 1:
+        print("Press enter to continue...", end="\r")
+        wait = str(input())
+    if waitsetc == 0:
+        try:
+            wait = str(input("\nPress enter to exit..."))
+            sys.exit(0)
+        except:
+            sys.exit(0)
+
+def ll(p):
+    s = 4
+    m = (1 << p) - 1
+    for _ in range(0, p-2):
+        sqr = s*s
+        s = (sqr & m) + (sqr >> p)
+        if s >= m:
+            s -= m
+        s -= 2
+    return s
+
+def ll_hm(p):
+    s = 4
+    m = 2**p - 1
+    for _ in range(0, p-2):
+        sqr = s*s
+        s = (sqr & m) + (sqr >> p)
+        if s >= m:
+            s -= m
+        s -= 2
+    return s
+
+def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex, residue, arguments, memstat):
+    try:
+        if "-dc" in arguments or (version_get and release_ver < 10):
+            colors.rmcolor()
+        try:
+            expand_1 = "2^" if ex else ""
+            expand_2 = "-1" if ex else ""
+            mstr = "" if ex else "M"
+        except BaseException:
+            expand_1 = ""
+            expand_2 = ""
+            mstr = "M"
+        for counter in range(start_var+1, passes + 1, var):
+            s = 4
+            if memstat:
+                m = 2**p - 1
+            else:
+                m = (1 << p) - 1
+            for _ in range(0, p-2):
+                sqr = s*s
+                s = (sqr & m) + (sqr >> p)
+                if s >= m:
+                    s -= m
+                s -= 2
+            if s == 0:
+                print(time.ctime(), colors.green+f"  Pass {counter} completed, {expand_1}{mstr}{p}{expand_2} is a Mersenne Prime"+colors.end, end="\n")
+                Mersenne_confirm_status.put_nowait(0)
+            else:
+                print(time.ctime(), colors.yellow+f"  Pass {counter} completed, {expand_1}{mstr}{p}{expand_2} is not a Mersenne Prime"+colors.end, end="\n")
+                Mersenne_confirm_status.put_nowait(1)
+            residue.put_nowait([counter, s])       
+    except MemoryError:
+        print(f"{time.ctime()}   Worker {start_var+1}: {colors.red}ERROR FATAL:   MemoryError{colors.end}                                       ", end="\n")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        finished.put_nowait(1)
+
+def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, maximum, Mersenne_primes_queue, finished, ex, odd, arguments, maxspeed, progress, memstat):
+    try:
+        if "-dc" in arguments or (version_get and release_ver < 10):
+            colors.rmcolor()
+        try:
+            expand_1 = "2^" if ex else ""
+            expand_2 = "-1" if ex else ""
+            mstr = "" if ex else "M"
+        except BaseException:
+            expand_1 = ""
+            expand_2 = ""
+            mstr = "M"
+        if odd or maxspeed:
+            var_sub = 1 if p_start_int % 2 == 0 else 0 
+            for p in range(p_start_int + start_var*2-var_sub, maximum + 1, var*2):
+                if progress != "progress":
+                    progress.put_nowait("")
+                s = 4
+                if memstat:
+                    m = 2**p - 1
+                else:
+                    m = (1 << p) - 1
+                for _ in range(0, p-2):
+                    sqr = s*s
+                    s = (sqr & m) + (sqr >> p)
+                    if s >= m:
+                        s -= m
+                    s -= 2
+                if s == 0:
+                    Mersenne_primes_queue.put_nowait(p)
+                    print(str(time.ctime()), colors.green+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.end, end="\n")
+                p += core_count
+        else:
+            for p in range(p_start_int + start_var, maximum + 1, var):
+                if progress != "progress":
+                    progress.put_nowait("")
+                s = 4
+                if memstat:
+                    m = 2**p - 1
+                else:
+                    m = (1 << p) - 1
+                for _ in range(0, p-2):
+                    sqr = s*s
+                    s = (sqr & m) + (sqr >> p)
+                    if s >= m:
+                        s -= m
+                    s -= 2
+                if s == 0:
+                    Mersenne_primes_queue.put_nowait(p)
+                    print(str(time.ctime()), colors.green+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.end, end="\n")
+                p += core_count
+    except MemoryError:
+        print(f"{time.ctime()}   Worker {start_var+1}: {colors.red}ERROR FATAL:   MemoryError{colors.end}                     ", end="\n")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        finished.put_nowait(1)
+
+# This is the Wheel animation
+def loading_animation(wait_between, finished, core_count, progress, start, finish, multiplier):
+    if not(progress == "progress"):
+        while finished.qsize() != core_count:
+            try:
+                progress_stat = progress.qsize()*multiplier + start - 1
+                print("| ", progress_stat, end="\r")
+                time.sleep(wait_between)
+                print("/ ", progress_stat, end="\r")
+                time.sleep(wait_between)
+                print("- ", progress_stat, end="\r")
+                time.sleep(wait_between)
+                print("\ ", progress_stat, end="\r")
+                time.sleep(wait_between)
+            except :
+                continue
+    else:
+        try:
+            while finished.qsize() != core_count:
+                print("| ", end="\r")
+                time.sleep(wait_between)
+                print("/ ", end="\r")
+                time.sleep(wait_between)
+                print("- ", end="\r")
+                time.sleep(wait_between)
+                print("\ ", end="\r")
+                time.sleep(wait_between)
+        except KeyboardInterrupt:
+            pass
+    try:
+        print(f"  {len(str(progress_stat))*' '}", end="\r")
+    except KeyboardInterrupt:
+        sys.exit(0)
+    except:
+        print(f"        ", end="\r")
+
+def main():
+    #Default Values Initialize phase
+
+    #Display primes as exponents
+    #Default False
+    ex = False # -e
+
+    individual_output = False # -io
+
+    #LehmerPy V1.7 Development Beta
+    #Const
+    VERSION = 17
+    BETA = False
+
+    #Animation Speed - Smaller value = faster, -1 = off
+    #Default 0.1
+    loadani_speed = 0.1 # -l
+
+    odd = True # -all or -ms
+    out_file = False # -o
+    maxspeed = False # -ms
+
+    # Global Vars
+    global p_start_int
+    global max_p_value
+    global core_count
+    global arguments
+    global release_ver
+    global version_get
+    global ll
+    global ll_hm
+
+    #Initialize Phase
     file_path = str(__file__)
-    Mersenne_primes_queue = Queue()
-    Mersenne_confirm_status = Queue()
-    finished = Queue()
-    manager = multiprocessing.Manager()
-    residue = manager.Queue()
     residue_list = []
     Mersenne_confirm_error = []
     Mersenne_primes = []
     perm_stat = True
     slash1 = "\ "
     slash2 = "/"
+    doubleslash = slash1[0]*2
     reserved = ["reserved", "/", "?", "%", "*", ":", "|", "<", ">", '"', "-"]
     reserved[0] = slash1[0]
     fstart = file_path.rfind(slash1[0])
@@ -46,30 +296,23 @@ if __name__ == "__main__":
     file_path = file_path.replace(file_name, "", 1)
     file_name = file_name[0:file_name.rfind(".")]
     custom_file = "output.txt"
-    #Display primes as exponents
-    #Defualt False
-    ex = False
-
-    #LehmerPy V1.5 Stable
-    version = 15
-    beta = False
-
-    #Animation Speed - Smaller value = faster, -1 = off
-    #Defualt 0.1
-    loadani_speed = 0.1
-
-    odd = True
-
-    out_file = False
-
-    maxspeed = False
+    premquit = False
+    multiplier = 1
+    high_memory = False
+    import hashlib
+    hash_md5 = hashlib.md5()
 
     # CMD arguments get dealt with here
-    map(str(), arguments)
     if "-all" in arguments:
         odd = False
+    if "-dc" in arguments or (version_get and release_ver < 10):
+        colors.rmcolor()
+    else:
+        colors.encolor()
     if "-e" in arguments:
         ex = True
+    if "-io" in arguments:
+        individual_output = True
     if "-j" in arguments:
         try:
             core_count = int(arguments[arguments.index("-j") + 1])
@@ -77,12 +320,12 @@ if __name__ == "__main__":
             pass
         if core_count <= 0:
             core_count = 1
-    else:       
+    else:
         for x in arguments:
             x = str(x)
             if "-j" in x and len(x) > 2:
                 try:
-                    core_count = int(x[2:len(x)])
+                    core_count = int(x[2:])
                 except:
                     pass
                 break  
@@ -98,7 +341,7 @@ if __name__ == "__main__":
             x = str(x)
             if "-l" in x and len(x) > 2:
                 try:
-                    loadani_speed = float(x[2:len(x)])
+                    loadani_speed = float(x[2:])
                     break  
                 except:
                     pass
@@ -117,7 +360,7 @@ if __name__ == "__main__":
         for x in arguments:
             x = str(x)
             if "-o" in x and len(x) > 2:
-                custom_file_str = str(x[2:len(x)])
+                custom_file_str = str(x[2:])
                 out_file = True    
                 if not(any(check in custom_file_str for check in reserved)):
                     if not(".txt" in custom_file_str[len(custom_file_str)-4:len(custom_file_str)]):
@@ -133,209 +376,43 @@ if __name__ == "__main__":
         dc = " " if release_ver < 10 and version_get else " [-dc]"
     except:
         pass
+    if "-np" in arguments:
+        noprocess = True
+    else:
+        import multiprocessing
+        from multiprocessing import Process, Queue
+        multiprocessing.freeze_support()
+        multiprocessing.set_start_method('spawn')
+        Mersenne_primes_queue = Queue()
+        Mersenne_confirm_status = Queue()
+        finished = Queue()
+        manager = multiprocessing.Manager()
+        residue = manager.Queue()
+        noprocess = False
     if "/?" in arguments or "?" in arguments:
         print("\n")
-        print(f"Usage: {file_name} [-all]{dc} [-e] [-j int] [-l float] [-ms]")
-        print(f"{' '*len(file_name)}        [-o name]")
+        print(f"Usage: {file_name} [-all]{dc} [-e] [-io] [-j int] [-l float] [-ms]")
+        print(f"{' '*len(file_name)}        [-np] [-o name]")
         print("\n")
         print("Options:")
         print("    -all           Tests all numbers")
         if dc == " [-dc]":
             print("    -dc            Disables ANSI colors")
         print("    -e             Displays Mersenne primes as a power")
+        print("    -io            Individualy outputs numbers as separate text files")
         print("    -j int         Threads to use")
         print("    -l float       Speed of progress wheel")
         print("    -ms            Use for maximum speed and efficiency")
-        print("    -o name        Save output to txt. name is optional")   
+        print("    -np            Disables multiprocessing")
+        print("    -o name        Save output to txt. name is optional")
         print("\n")
 
         sys.exit(0)
-#Everything past here is mine
-class colors:
-    def __init__(self, PURPLE, CYAN, DARKCYAN, BLUE, GREEN, YELLOW, RED, BOLD, UNDERLINE, END):
-        self.PURPLE = PURPLE
-        self.CYAN = CYAN
-        self.DARKCYAN = DARKCYAN
-        self.BLUE = BLUE
-        self.GREEN = GREEN
-        self.YELLOW = YELLOW
-        self.RED = RED
-        self.BOLD = BOLD
-        self.UNDERLINE = UNDERLINE 
-        self.END = END
-    def rmcolor():
-        colors.PURPLE = ''
-        colors.CYAN = ''
-        colors.DARKCYAN = ''
-        colors.BLUE = ''
-        colors.GREEN = ''
-        colors.YELLOW = ''
-        colors.RED = ''
-        colors.BOLD = ''
-        colors.UNDERLINE = ''
-        colors.END = ''
-    def encolor():
-        colors.PURPLE = '\033[95m'
-        colors.CYAN = '\033[96m'
-        colors.DARKCYAN = '\033[36m'
-        colors.BLUE = '\033[94m'
-        colors.GREEN = '\033[92m'
-        colors.YELLOW = '\033[93m'
-        colors.RED = '\033[91m'
-        colors.BOLD = '\033[1m'
-        colors.UNDERLINE = '\033[4m'
-        colors.END = '\033[0m'
+    colors.clear()
 
-
-if "-dc" in arguments or (version_get and release_ver < 10):
-    colors.rmcolor()
-else:
-    colors.encolor()        
-
-def clear():
-    if platform.system() == 'Windows':
-        os.system('cls')
-    else:
-        os.system('clear')
-
-def wait(waitsetc):
-    if waitsetc == 2:
-        print("Retry? (Y/N)...\n", end="\r")
-        rpl = str(input())
-        if rpl == "y" or rpl == "Y" or rpl == "Yes" or rpl == "yes" or rpl == "ys":
-            return False
-        else:
-            return True
-    if waitsetc == 1:
-        print("Press enter to continue...", end="\r")
-        wait = str(input())
-    if waitsetc == 0:
-        wait = str(input("\nPress enter to exit..."))
-        sys.exit(0)
-
-def Lucas_lehmer_confirm(p, passes, start_var, var, Mersenne_confirm_status, finished, ex, residue, arguments):
-    if "-dc" in arguments or (version_get and release_ver < 10):
-        colors.rmcolor()
-    else:
-        colors.encolor()
-    try:
-        expand_1 = "2^" if ex else ""
-        expand_2 = "-1" if ex else ""
-        mstr = "" if ex else "M"
-    except BaseException:
-        expand_1 = ""
-        expand_2 = ""
-        mstr = "M"
-    for counter in range(start_var+1, passes + 1, var):
-        s = 4
-        m = (1 << p) - 1
-        for _ in range(0, p-2):
-            sqr = s*s
-            s = (sqr & m) + (sqr >> p)
-            if s >= m:
-                s -= m
-            s -= 2
-        if s == 0:
-            print(time.ctime(), colors.GREEN+f"  Pass {counter} completed, {expand_1}{mstr}{p}{expand_2} is a Mersenne Prime"+colors.END)
-            Mersenne_confirm_status.put(0)
-        else:
-            print(time.ctime(), colors.YELLOW+f"  Pass {counter} completed, {expand_1}{mstr}{p}{expand_2} is not a Mersenne Prime"+colors.END)
-            Mersenne_confirm_status.put(1)
-        residue.put([counter, s])
-    finished.put(1)
-      
-        
-
-def Lucas_lehmer_prog_main_range(p_start_int, start_var, var, max, Mersenne_primes_queue, finished, ex, odd, arguments, maxspeed, progress="progress"):
-    if "-dc" in arguments or (version_get and release_ver < 10):
-        colors.rmcolor()
-    else:
-        colors.encolor()
-    try:
-        expand_1 = "2^" if ex else ""
-        expand_2 = "-1" if ex else ""
-        mstr = "" if ex else "M"
-    except BaseException:
-        expand_1 = ""
-        expand_2 = ""
-        mstr = "M"
-    if odd or maxspeed:
-        for p in range(p_start_int + start_var*2-1, max + 1, var*2):
-            if progress != "progress":
-                if progress.empty():
-                    progress.put(p)
-            s = 4
-            m = (1 << p) - 1
-            for _ in range(0, p-2):
-                sqr = s*s
-                s = (sqr & m) + (sqr >> p)
-                if s >= m:
-                    s -= m
-                s -= 2
-            if s == 0:
-                Mersenne_primes_queue.put(p)
-                print(str(time.ctime()), colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.END)
-            p += core_count
-    else:
-        for p in range(p_start_int + start_var, max + 1, var):
-            if progress.empty():
-                progress.put(p)
-            s = 4
-            m = (1 << p) - 1
-            for _ in range(0, p-2):
-                sqr = s*s
-                s = (sqr & m) + (sqr >> p)
-                if s >= m:
-                    s -= m
-                s -= 2
-            if s == 0:
-                Mersenne_primes_queue.put(p)
-                print(str(time.ctime()), colors.GREEN+f"  Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+ colors.END)
-            p += core_count
-    finished.put(1)
-
-# This is the Wheel animation
-def loading_animation(wait_between, finished, core_count, progress="progress"):
-    if not(progress == "progress"):
-        avg_prog = []
-        progress_stat = 3
-        while finished.qsize() != core_count:
-            try:
-                avg_prog[:] = []
-                for x in range(core_count):
-                    avg_prog.append(progress.get())
-                progress_stat = int(sum(avg_prog)/core_count)
-            except:
-                pass
-            print("| ", progress_stat, end="\r")
-            time.sleep(wait_between)
-            print("/ ", progress_stat, end="\r")
-            time.sleep(wait_between)
-            print("- ", progress_stat, end="\r")
-            time.sleep(wait_between)
-            print("\ ", progress_stat, end="\r")
-            time.sleep(wait_between)
-            
-    else:
-        while finished.qsize() != core_count:
-            print("| ", end="\r")
-            time.sleep(wait_between)
-            print("/ ", end="\r")
-            time.sleep(wait_between)
-            print("- ", end="\r")
-            time.sleep(wait_between)
-            print("\ ", end="\r")
-            time.sleep(wait_between)
-            
-    print("                                                                                                                                                                                            ", end="\r")
-
-
-if __name__ == "__main__":
-    clear()
-
-    # ACSII Art
+    # ASCII Art
     # 4x
-    acsii_title = [r"""_/\\\_____________________________/\\\___________________________________________________________/\\\\\\\\\\\\\_________________                
+    ascii_art = [r"""_/\\\_____________________________/\\\___________________________________________________________/\\\\\\\\\\\\\_________________                
 _\/\\\____________________________\/\\\__________________________________________________________\/\\\/////////\\\_______________       
  _\/\\\____________________________\/\\\__________________________________________________________\/\\\_______\/\\\____/\\\__/\\\_      
   _\/\\\_________________/\\\\\\\\__\/\\\____________/\\\\\__/\\\\\_______/\\\\\\\\___/\\/\\\\\\\__\/\\\\\\\\\\\\\/____\//\\\/\\\__     
@@ -364,17 +441,19 @@ r"""    __         __                        ____
  / /___/  __/ / / / / / / / /  __/ /  / ____/ /_/ / 
 /_____/\___/_/ /_/_/ /_/ /_/\___/_/  /_/    \__, /  
                                            /____/   """]
-    acsii_title_op = int(time.time()*100) % len(acsii_title)
-    print(colors.BOLD+acsii_title[acsii_title_op]+colors.END)
+
+    if version_get and (release_ver < 10): ascii_art.pop(0)                                
+    ascii_art_op = int(time.time()*100) % len(ascii_art)
+    print(colors.bold+ascii_art[ascii_art_op]+colors.end)
     print("\n\n")
-    version /= 10
-    if beta:
-        beta = "b"
+    VERSION /= 10
+    if BETA:
+        BETA = "b"
     else:
-        beta = ""
-    print(f"v{version}{beta}\n")
-    print("1:"+colors.BOLD+"R"+colors.END+"ange - Will Calculate Mersenne Primes in a specific range")
-    print("2:"+colors.BOLD+"C"+colors.END+"onfirm - Will Confirm if a number is a Mersenne Prime or not")
+        BETA = ""
+    print(f"v{VERSION}{BETA}\n")
+    print("1:"+colors.bold+"R"+colors.end+"ange - Will Calculate Mersenne Primes in a specific range")
+    print("2:"+colors.bold+"C"+colors.end+"onfirm - Will Confirm if a number is a Mersenne Prime or not")
     
     try:
         mode = input("MODE:")
@@ -406,51 +485,94 @@ r"""    __         __                        ____
             max_p_value = int(max_p_value)
         except:
             sys.exit(0)
-        if p_start_int <= 2:
-            p_start_int = 2
-        
+        if p_start_int <= 2: p_start_int = 2
+        if p_start_int >= ((1 << 32) - 1) or max_p_value >= ((1 <<32) - 1): high_memory = True
         print("\n")
-        fallback_core_count = 2
-        if loadani_speed == -1:
-            progress = "progress"
-        else:
-            progress = multiprocessing.JoinableQueue(core_count)
-        print(f"{platform.processor()}\n")
-        if core_count <= 0:
-            print(str(time.ctime()),"  "+colors.RED+"ERROR: Unable to retreive core count"+colors.END)
-            print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
-            core_count = fallback_core_count
-        start_date = time.ctime()
-        start_time = time.time()        
-        for num in range(core_count):
-            print(str(time.ctime()), "  Starting Workers")
-            multi = Process(target=Lucas_lehmer_prog_main_range, args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex, odd, arguments, maxspeed, progress))
-            multi.start()
-        if loadani_speed != -1:
-            loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count, progress))
-            loadani.start()
-        while finished.qsize() != core_count:
-            time.sleep(0.0001)
-        try:
-            while not progress.empty():
+        if not noprocess:
+            fallback_core_count = 2
+            if "-1" in str(loadani_speed):
+                progress = "progress"
+                start = p_start_int
+                finish = 1
+            else:
+                progress = multiprocessing.JoinableQueue()
+            print(f"{platform.processor()}\n")
+            multiplier = 2 if odd or maxspeed else 1
+            if core_count <= 0:
+                print(str(time.ctime()),"  "+colors.red+"ERROR: Unable to retreive core count"+colors.end)
+                print(str(time.ctime()),colors.yellow+f"  Setting core count to {fallback_core_count}"+colors.end)
+                core_count = fallback_core_count
+            if high_memory:
+                print(f"{time.ctime()}{colors.yellow}   WARNING:   Memory usage will be higher than expected{colors.end}")
+            start_date = time.ctime()
+            start_time = time.time()        
+            for num in range(core_count):
+                print(str(time.ctime()), "  Starting Workers")
+                multi = Process(target=Lucas_lehmer_prog_main_range, name=f"Worker {num + 1}", args=(p_start_int, num, core_count, max_p_value, Mersenne_primes_queue, finished, ex, odd, arguments, maxspeed, progress, high_memory))
+                multi.start()
+            if not "-1" in str(loadani_speed):
+                loadani = Process(target=loading_animation, name="LoadingAnimation", args=(loadani_speed, finished, core_count, progress, p_start_int, max_p_value, multiplier))
+                loadani.start()
+            while finished.qsize() != core_count:
                 try:
-                    progress.get(timeout=0.001)
+                    time.sleep(0.0001)
+                except KeyboardInterrupt:
+                    break
                 except:
-                    pass
-        except:
-            pass
-        if loadani_speed != -1:
-            progress.close()
-            loadani.terminate()
-        for num in range(core_count):
-            print(str(time.ctime()), "  Stopping Workers")
-            multi.terminate()
-        end_time = time.time()
-        end_date = time.ctime()
-        print(str(time.ctime()), "  Finishing")
-        while not Mersenne_primes_queue.empty():
-            Mersenne_primes.append(Mersenne_primes_queue.get())
-        Mersenne_primes.sort()
+                    continue
+            if not "-1" in str(loadani_speed):
+                loadani.terminate()
+                loadani.join()
+            for num in range(core_count):
+                print(str(time.ctime()), "  Stopping Workers")
+                multi.terminate()
+                multi.join()
+            end_time = time.time()
+            end_date = time.ctime()
+            print(str(time.ctime()), "  Finishing")
+            try:
+                while not progress.empty():
+                    progress.get_nowait()
+            except AttributeError:
+                pass
+            while not Mersenne_primes_queue.empty():
+                Mersenne_primes.append(Mersenne_primes_queue.get_nowait()) 
+            Mersenne_primes.sort()
+        else:
+            print(f"{platform.processor()}\n")
+            print(f"{time.ctime()}   Starting")
+            if high_memory:
+                ll = ll_hm
+                print(f"{time.ctime()}{colors.yellow}   WARNING:   Memory usage will be higher than expected{colors.end}")
+            try:
+                expand_1 = "2^" if ex else ""
+                expand_2 = "-1" if ex else ""
+                mstr = "" if ex else "M"
+            except BaseException:
+                expand_1 = ""
+                expand_2 = ""
+                mstr = "M"
+            start_date = time.ctime()
+            start_time = time.time()
+            try:
+                if odd or maxspeed:
+                    p_start_int -= 1 if p_start_int % 2 == 0 else 0
+                    for p in range(p_start_int, max_p_value + 1, 2):
+                        if ll(p) == 0:
+                            print(time.ctime()+colors.green+f"   Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+colors.end)
+                            Mersenne_primes.append(p)
+                else:
+                    for p in range(p_start_int, max_p_value):
+                        if ll(p) == 0:
+                            print(time.ctime()+colors.green+f"   Mersenne Prime Found:  {expand_1}{mstr}{p}{expand_2}"+colors.end)
+                            Mersenne_primes.append(p)
+            except MemoryError:
+                print(f"{time.ctime()}   {colors.red}ERROR FATAL:   MemoryError{colors.end}")
+            except KeyboardInterrupt:
+                pass
+            print(f"{time.ctime()}   Finishing")
+            end_time = time.time()
+            end_date = time.ctime()
         time_taken = float('%.4f'%(end_time - start_time))
         unit = "seconds"
         if time_taken >= 600:
@@ -467,14 +589,71 @@ r"""    __         __                        ____
                         unit = "weeks"
         print(f"\nCompute Time: {time_taken} {unit}\n")
         plural = "" if len(Mersenne_primes) == 1 else "s"
-        print(f"{colors.UNDERLINE}{colors.BOLD}Mersenne Prime{plural}{colors.END}{colors.END}")
+        print(f"{colors.underline}{colors.bold}Mersenne Prime{plural}{colors.end}{colors.end}")
         for x in Mersenne_primes:
             print(f"2^{x}-1 = {2**x-1}\n")
-        print(f"\n\n{colors.BOLD}{colors.UNDERLINE}Perfect Number{plural}{colors.END}{colors.END}")
+        print(f"\n\n{colors.bold}{colors.underline}Perfect Number{plural}{colors.end}{colors.end}")
         for x in Mersenne_primes:
             print(f"2^{x - 1} · (2^{x}-1) = {(2**(x-1))*(2**x-1)}\n")
+        if individual_output == True:
+            print("\n")
+            primeLength = Mersenne_primes.index(max(Mersenne_primes))
+            for prime in Mersenne_primes:
+                ioname = f"M{prime}.txt"
+                try:
+                    with open(file_path+f"M{prime}.txt", "r", encoding='utf-8') as indread:
+                        if os.path.exists(file_path+f"M{prime}.txt"):
+                            indread.seek(0)
+                            contents = indread.read()
+                            if str(2**prime-1) != str(contents):
+                                print(f"Changing contents of {file_path + ioname} ", end="")
+                                while perm_stat:
+                                    try:
+                                        with open(file_path+f"M{prime}.txt", "w") as indout:
+                                            indout.write(str(2**prime-1))
+                                        perm_stat = False
+                                        with open(file_path + ioname, "rb") as f:
+                                            for chunk in iter(lambda: f.read(4096), b""):
+                                                hash_md5.update(chunk)
+                                            print(f"{' '*(primeLength-len(str(ioname))+12)}{hash_md5.hexdigest()}")
+                                    except PermissionError:
+                                        print(colors.red+"ERROR:   Permission to write to file denied"+colors.end)
+                                        if wait(2):
+                                            perm_stat = False
+                                    except IOError:
+                                        print(colors.red+"ERROR:   I/O Error"+colors.end)
+                                        if wait(2):
+                                            perm_stat = False
+                                perm_stat = True
+                            else:
+                                print(f"{ioname} already exists ", end="")
+                                with open(file_path + ioname, "rb") as f:
+                                    for chunk in iter(lambda: f.read(4096), b""):
+                                        hash_md5.update(chunk)
+                                    print(f"{' '*(primeLength-len(str(ioname))+12)}{hash_md5.hexdigest()}")
+                except FileNotFoundError:
+                    while perm_stat:
+                        try:
+                            print(f"Generating {ioname} ", end="")
+                            with open(file_path+f"M{prime}.txt", "w") as indout:
+                                indout.write(str(2**prime-1))
+                            perm_stat = False
+                            with open(file_path + ioname, "rb") as f:
+                                for chunk in iter(lambda: f.read(4096), b""):
+                                    hash_md5.update(chunk)
+                                print(f"{' '*(primeLength-len(str(ioname))+12)}{hash_md5.hexdigest()}")
+                        except PermissionError:
+                            print(colors.red+"ERROR:   Permission to write to file denied"+colors.end)
+                            if wait(2):
+                                perm_stat = False
+                        except IOError:
+                            print(colors.red+"ERROR:   I/O Error"+colors.end)
+                            if wait(2):
+                                perm_stat = False
+                    perm_stat = True
+            print("\n", end="")
         if out_file:
-            print("\n\n")
+            print("\n")
             while perm_stat:
                 try:
                     if os.path.exists(file_path + custom_file):
@@ -487,16 +666,16 @@ r"""    __         __                        ____
                         output.write("\n")
                         perm_stat = False
                 except PermissionError:
-                    print(colors.RED+"ERROR:   Permission to write to file denied"+colors.END)
+                    print(colors.red+"ERROR:   Permission to write to file denied"+colors.end)
                     if wait(2):
                         perm_stat = False
                 except  IOError:
-                    print(colors.RED+"ERROR:   I/O Error"+colors.END)
+                    print(colors.red+"ERROR:   I/O Error"+colors.end)
                     if wait(2):
                         perm_stat = False
             with open(file_path + custom_file,"a") as output:
                 output.write("\n\n---------------------------------------------------------------------------------------\n")
-                output.write(f"{file_name} v{version}{beta} Args: ")  
+                output.write(f"{file_name} v{VERSION}{BETA} Args: ")  
                 for w in range(1, len(arguments)):
                     output.write(f"{arguments[w]} ")
                 output.write(f"\n{platform.processor()}\n")
@@ -516,10 +695,14 @@ r"""    __         __                        ____
                 modified_size = os.path.getsize(file_path + custom_file)
                 sign = "-" if modified_size - original_size < 0 else "+"
                 plural = "" if modified_size - original_size == 0 else "s"
-                print(f"{colors.GREEN}Success{colors.END}\n{custom_file} {sign}{modified_size-original_size} Byte{plural}")            
+                print(f"{colors.green}Success{colors.end}\n{custom_file} {sign}{modified_size-original_size} Byte{plural}")            
         print("\n")
         wait(0)
-    # Confirm
+
+
+# Confirm Mode
+
+
     if str(mode) == "2" or mode == "confirm" or mode == "Confirm" or mode == "C" or mode == "c":
         print("\nConfirmation")
         try:
@@ -545,42 +728,87 @@ r"""    __         __                        ____
             passes = int(passes)
         except:
             sys.exit(0)
-        if passes <= 0 or p <= 0:
-            sys.exit(0)
-        
-        fallback_core_count = 2
-        print(f"\n\n{platform.processor()}\n")
-        if core_count <= 0:
-            print(str(time.ctime()),"  "+colors.RED+"ERROR: Unable to retreive core count"+colors.END)
-            print(str(time.ctime()),colors.YELLOW+f"  Setting core count to {fallback_core_count}"+colors.END)
-            core_count = fallback_core_count
-        if passes <= core_count:
-            core_count = int(passes)
+        if passes <= 0 or p <= 0: sys.exit(0)
+        if p >= ((1 << 32) - 1): high_memory = True
+        if not noprocess:
+            fallback_core_count = 2
+            print(f"\n\n{platform.processor()}\n")
             if core_count <= 0:
-                core_count = 1
-        start_date = time.ctime()
-        start_time = time.time()
-        for num in range(core_count):
-            plural = " " if passes == 1 else "s"
-            print(time.ctime(),f"  Starting Worker{plural}")
-            multi = Process(target=Lucas_lehmer_confirm, args=(p, passes, num, core_count, Mersenne_confirm_status, finished, ex, residue, arguments))
-            multi.start()
-        if loadani_speed != -1:
-            loadani = Process(target=loading_animation, args=(loadani_speed, finished, core_count)) 
-            loadani.start()
-        while finished.qsize() != core_count:
-            time.sleep(0.0001)
-        end_time = time.time() 
-        end_date = time.ctime()
-        for num in range(core_count):
-            print(str(time.ctime()) +f"   Stopping Worker{plural}")
-            multi.terminate()
-            multi.join()
-        print(str(time.ctime())+"   Finishing")
-        if loadani_speed != -1:
-            loadani.terminate()
-        while not Mersenne_confirm_status.empty():
-            Mersenne_confirm_error.append(Mersenne_confirm_status.get())
+                print(str(time.ctime()),"  "+colors.red+"ERROR: Unable to retreive core count"+colors.end)
+                print(str(time.ctime()),colors.yellow+f"  Setting core count to {fallback_core_count}"+colors.end)
+                core_count = fallback_core_count
+            if passes <= core_count:
+                core_count = int(passes)
+                if core_count <= 0:
+                    core_count = 1
+            progress = "progress"
+            start = 0
+            finish = 0
+            if high_memory:
+                print(f"{time.ctime()}{colors.yellow}   WARNING:   Memory usage will be higher than expected{colors.end}")
+            start_date = time.ctime()
+            start_time = time.time()
+            for num in range(core_count):
+                plural = " " if passes == 1 else "s"
+                print(time.ctime(),f"  Starting Worker{plural}")
+                multi = Process(target=Lucas_lehmer_confirm, name=f"Worker {num + 1}", args=(p, passes, num, core_count, Mersenne_confirm_status, finished, ex, residue, arguments, high_memory))
+                multi.start()
+            if not "-1" in str(loadani_speed):
+                loadani = Process(target=loading_animation, name="LoadingAnimation", args=(loadani_speed, finished, core_count, progress, start, finish, multiplier)) 
+                loadani.start()
+            while finished.qsize() != core_count:
+                try:
+                    time.sleep(0.0001)
+                except KeyboardInterrupt:
+                    premquit = True
+                    break
+                except:
+                    continue
+            end_time = time.time()
+            end_date = time.ctime()
+            for num in range(core_count):
+                print(str(time.ctime()) +f"   Stopping Worker{plural}")
+                multi.terminate()
+                multi.join()
+            print(str(time.ctime())+"   Finishing")
+            if not "-1" in str(loadani_speed):
+                loadani.terminate()
+                loadani.join()
+            while not Mersenne_confirm_status.empty():
+                Mersenne_confirm_error.append(Mersenne_confirm_status.get_nowait())
+        else:
+            print(f"\n\n{platform.processor()}\n")
+            print(f"{time.ctime()}   Starting")
+            if high_memory:
+                ll = ll_hm
+                print(f"{time.ctime()}{colors.yellow}   WARNING:   Memory usage will be higher than expected{colors.end}")
+            try:
+                expand_1 = "2^" if ex else ""
+                expand_2 = "-1" if ex else ""
+                mstr = "" if ex else "M"
+            except BaseException:
+                expand_1 = ""
+                expand_2 = ""
+                mstr = "M"
+            start_date = time.ctime()
+            start_time = time.time()
+            try:
+                for x in range(1, passes + 1):
+                    lres = ll(p)
+                    if lres == 0:
+                        print(time.ctime(), colors.green+f"  Pass {x} completed, {expand_1}{mstr}{p}{expand_2} is a Mersenne Prime"+colors.end)
+                        Mersenne_confirm_error.append(0)
+                    else:
+                        print(time.ctime(), colors.yellow+f"  Pass {x} completed, {expand_1}{mstr}{p}{expand_2} is not a Mersenne Prime"+colors.end)  
+                        Mersenne_confirm_error(1)
+                    residue_list.append([x, lres])
+            except MemoryError:
+                print(f"{time.ctime()}   {colors.red}ERROR FATAL:   MemoryError{colors.end}")
+            except KeyboardInterrupt:
+                pass
+            print(f"{time.ctime()}   Finishing")
+            end_time = time.time()
+            end_date = time.ctime()            
         time_taken = float('%.4f'%(end_time - start_time))
         unit = "seconds"
         if time_taken >= 600:
@@ -596,25 +824,109 @@ r"""    __         __                        ____
                         time_taken /= 7
                         unit = "weeks"
         print(f"\nCompute Time: {time_taken} {unit}\n")
-        while not residue.empty():
-            residue_list.append(residue.get())
+        if not noprocess:
+            while not residue.empty():
+                residue_list.append(residue.get_nowait())
         residue_list.sort(key=lambda x: x[0])
-        for res in residue_list:
-            print(f"Pass {res[0]}, Residue {res[1]}")
-        if max(residue_list, key=lambda x: x[1]) == min(residue_list, key=lambda x: x[1]):
-            error = False
-            if max(Mersenne_confirm_error) == 0:
-                print(f"\n{colors.UNDERLINE}{colors.BOLD}Mersenne Prime{colors.END}{colors.END}\n2^{p}-1 = {2**p - 1}")
-                if not error:
-                    print("No errors detected")
-                print(f"\n{colors.UNDERLINE}{colors.BOLD}Perfect Number{colors.END}{colors.END}\n2^{p - 1} · (2^{p}-1) = {(2**(p-1))*(2**p-1)}")
+        try:
+            # for res in residue_list:
+            #     print(f"Pass {res[0]}, Residue {res[1]}")
+            padding = len(str(max(residue_list, key=lambda k:k[1]))) + len(str(residue_list.index(max(residue_list, key=lambda k:k[1])))) + 8
+            columns = 3 if not(version_get and release_ver < 10) else 1 # + 1
+            col_var = int((columns + 1)/2)
+            st_length = 0
+            high_sec = 0
+            rows = len(residue_list) // columns + len(residue_list) % columns
+            for print_var in range(0,len(residue_list)*columns+1, col_var):
+                try:
+                    ind_variation = 0
+                    for sp_var in range(0,rows*columns+1,rows):
+                        st_length = len(str(residue_list[print_var+print_var + ind_variation][0])) + len(str(residue_list[print_var+print_var + ind_variation][1]))
+                        print(f"Pass {residue_list[print_var+print_var + ind_variation][0]}, Residue {residue_list[print_var+print_var + ind_variation][1]} {' '*(padding - st_length)}", end="")
+                        high_sec = print_var+print_var + ind_variation
+                        ind_variation += 1
+                    print("\n",end="")
+                except IndexError:
+                    break
+            for print_var in range(high_sec + 1, len(residue_list)):
+                st_length = len(str(residue_list[print_var][0])) + len(str(residue_list[print_var][1]))
+                print(f"Pass {residue_list[print_var][0]}, Residue {residue_list[print_var][1]} {' '*(padding - st_length)}", end="")
+            print("\n", end="")
+            if max(residue_list, key=lambda x: x[1]) == min(residue_list, key=lambda x: x[1]):
+                error = False
+                if max(Mersenne_confirm_error) == 0:
+                    print(f"\n{colors.underline}{colors.bold}Mersenne Prime{colors.end}{colors.end}\n2^{p}-1 = {2**p - 1}")
+                    if not error:
+                        print("No errors detected")
+                    print(f"\n{colors.underline}{colors.bold}Perfect Number{colors.end}{colors.end}\n2^{p - 1} · (2^{p}-1) = {(2**(p-1))*(2**p-1)}")
+                else:
+                    print(f"\n{colors.underline}{colors.bold}Mersenne Number{colors.end}{colors.end}\n2^{p}-1 = {2**p - 1}")
             else:
-                print(f"\n{colors.UNDERLINE}{colors.BOLD}Mersenne Number{colors.END}{colors.END}\n2^{p}-1 = {2**p - 1}")
-        else:
-            print("Error Detected")
-            error = True
+                print("Error Detected")
+                error = True
+        except ValueError:
+            print(colors.red+"ERROR:   Premature Quit"+colors.end)
+            sys.exit(0)
+        print("\n")
+        if individual_output and max(Mersenne_confirm_error) == 0:
+            print("\n", end="")
+            primeLength = len(str(p))
+            prime = p
+            ioname = f"M{prime}.txt"
+            try:
+                with open(file_path+f"M{prime}.txt", "r", encoding='utf-8') as indread:
+                    if os.path.exists(file_path+f"M{prime}.txt"):
+                        indread.seek(0)
+                        contents = indread.read()
+                        if str(2**prime-1) != str(contents):
+                            print(f"Changing contents of {file_path + ioname} ", end="")
+                            while perm_stat:
+                                try:
+                                    with open(file_path+f"M{prime}.txt", "w") as indout:
+                                        indout.write(str(2**prime-1))
+                                    perm_stat = False
+                                    with open(file_path + ioname, "rb") as f:
+                                        for chunk in iter(lambda: f.read(4096), b""):
+                                            hash_md5.update(chunk)
+                                        print(f"{' '*(primeLength-len(str(ioname))+12)}{hash_md5.hexdigest()}")
+                                except PermissionError:
+                                    print(colors.red+"ERROR:   Permission to write to file denied"+colors.end)
+                                    if wait(2):
+                                        perm_stat = False
+                                except IOError:
+                                    print(colors.red+"ERROR:   I/O Error"+colors.end)
+                                    if wait(2):
+                                        perm_stat = False
+                            perm_stat = True
+                        else:
+                            print(f"{ioname} already exists ", end="")             
+                            with open(file_path + ioname, "rb") as f:
+                                for chunk in iter(lambda: f.read(4096), b""):
+                                    hash_md5.update(chunk)
+                                print(f"{' '*(primeLength-len(str(ioname))+12)}{hash_md5.hexdigest()}")                                        
+            except FileNotFoundError:
+                while perm_stat:
+                    try:
+                        print(f"Generating {ioname} ", end="")
+                        with open(file_path+f"M{prime}.txt", "w") as indout:
+                            indout.write(str(2**prime-1))
+                        perm_stat = False
+                        with open(file_path + ioname, "rb") as f:
+                            for chunk in iter(lambda: f.read(4096), b""):
+                                hash_md5.update(chunk)
+                            print(f"{' '*(primeLength-len(str(ioname))+12)}{hash_md5.hexdigest()}")                      
+                    except PermissionError:
+                        print(colors.red+"ERROR:   Permission to write to file denied"+colors.end)
+                        if wait(2):
+                            perm_stat = False
+                    except IOError:
+                        print(colors.red+"ERROR:   I/O Error"+colors.end)
+                        if wait(2):
+                            perm_stat = False
+                perm_stat = True
+            print("\n", end="")            
         if out_file:
-            print("\n\n")
+            print("\n")
             while perm_stat:
                 try:
                     if os.path.exists(file_path + custom_file):
@@ -627,16 +939,16 @@ r"""    __         __                        ____
                         output.write("\n")
                         perm_stat = False
                 except PermissionError:
-                    print(colors.RED+"ERROR:   Permission to write to file denied"+colors.END)
+                    print(colors.red+"ERROR:   Permission to write to file denied"+colors.end)
                     if wait(2):
                         perm_stat = False
                 except IOError:
-                    print(colors.RED+"ERROR:   I/O Error"+colors.END)
+                    print(colors.red+"ERROR:   I/O Error"+colors.end)
                     if wait(2):
                         perm_stat = False
             with open(file_path + custom_file,"a") as output:
                 output.write("\n---------------------------------------------------------------------------------------\n")
-                output.write(f"{file_name} v{version}{beta} Args: ")  
+                output.write(f"{file_name} v{VERSION}{BETA} Args: ")  
                 for w in range(1, len(arguments)):
                     output.write(f"{arguments[w]} ")
                 output.write(f"\n{platform.processor()}\n")
@@ -649,8 +961,25 @@ r"""    __         __                        ____
                     output.write("Error Detected\n\n")
                 else:
                     output.write("No errors detected\n\n")
-                for res in residue_list:
-                    output.write(f"Pass {res[0]}, Residue {res[1]}\n")
+                padding = len(str(max(residue_list, key=lambda k:k[1]))) + len(str(residue_list.index(max(residue_list, key=lambda k:k[1])))) + 8
+                rows = len(residue_list) // columns + len(residue_list) % columns
+                for print_var in range(0,len(residue_list)*columns+1, col_var):
+                    try:
+                        ind_variation = 0
+                        for sp_var in range(0,rows*columns+1,rows):
+                            st_length = len(str(residue_list[print_var+print_var + ind_variation][0])) + len(str(residue_list[print_var+print_var + ind_variation][1]))
+                            output.write(f"Pass {residue_list[print_var+print_var + ind_variation][0]}, Residue {residue_list[print_var+print_var + ind_variation][1]} {' '*(padding - st_length)}")
+                            high_sec = print_var+print_var + ind_variation
+                            ind_variation += 1
+                        output.write("\n")
+                    except IndexError:
+                        break
+                for print_var in range(high_sec + 1, len(residue_list)):
+                    st_length = len(str(residue_list[print_var][0])) + len(str(residue_list[print_var][1]))
+                    output.write(f"Pass {residue_list[print_var][0]}, Residue {residue_list[print_var][1]} {' '*(padding - st_length)}")
+                output.write("\n\n")
+                if premquit:
+                    output.write("(Premature Quit)\n")
                 plural = "" if len(str(2**p-1)) == 1 else "s"
                 output.write(f"\n\n2^{p}-1   ---   {len(str(2**p-1))} Digit{plural}")
                 if not error: 
@@ -668,10 +997,13 @@ r"""    __         __                        ____
                 modified_size = os.path.getsize(file_path + custom_file)
                 sign = "-" if modified_size - original_size < 0 else "+"
                 plural = "" if modified_size - original_size == 0 else "s"
-                print(f"{colors.GREEN}Success{colors.END}\n{custom_file} {sign}{modified_size-original_size} Bytes")
-        
+                print(f"{colors.green}Success{colors.end}\n{custom_file} {sign}{modified_size-original_size} Bytes")
+            print("\n")
+
         wait(0)
     else:
         sys.exit(0)
-    
+
+if __name__ == "__main__":
+    main()
 # End of Program

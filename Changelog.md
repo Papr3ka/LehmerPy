@@ -1,5 +1,27 @@
 # Changelog
 
+## V1.7 Sept 19 2020
+Added
+- MD5 hashes for Mersenne primes when using -io
+- Residues are now displayed neatly in columns
+
+Changes
+- Major code optimizations
+
+## V1.6 Aug 27 2020
+Added
+
+- -io option for individualing outputting mersenne primes
+- -np option to disable all forms of multiprocessing
+
+Fixed
+- KeyboardInterrupt would cause program to hang
+- Progress wheel was inaccurate
+
+Binary
+
+- .exe is now compiled using link-time optimization
+
 ## V1.5 Aug 17 2020
 Added
 - ability to view residue of confirmation
