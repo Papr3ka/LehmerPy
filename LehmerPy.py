@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020 Benjamin Yao
+# Licenced under the GNU GPL 3.0
 
 import os
 import sys
