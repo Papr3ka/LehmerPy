@@ -28,7 +28,7 @@ Options:
 ```
 
 ## Range
-Calculates if <img src="https://render.githubusercontent.com/render/math?math=2^p-1"> is prime within a givin range of p
+Calculates if <img src="https://render.githubusercontent.com/render/math?math=2^p-1"> is prime within a givin range of <img src="https://render.githubusercontent.com/render/math?math=p">
 ```
 Range
 MIN:
