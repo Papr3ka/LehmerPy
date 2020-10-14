@@ -28,7 +28,7 @@ Options:
 ```
 
 ## Range
-Calculates if 2^p-1 is prime within a givin range of p
+Calculates if <img src="https://render.githubusercontent.com/render/math?math=2^p-1"> is prime within a givin range of p
 ```
 Range
 MIN:
@@ -36,7 +36,7 @@ MAX:
 ```
 
 ## Confirm
-Performs multiple passes on 2^p-1 to confirm that it is prime 
+Performs multiple passes on <img src="https://render.githubusercontent.com/render/math?math=2^p-1"> to confirm that it is prime 
 ```
 Confirmation
 Confirm:
